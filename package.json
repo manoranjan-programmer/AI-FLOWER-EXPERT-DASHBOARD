@@ -1,0 +1,16 @@
+{
+  "name": "admin-dashboard-root",
+  "version": "1.0.0",
+  "description": "Admin Analytics Dashboard for AI Flower Expert",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../frontend && npm install",
+    "server": "cd server && node index.js",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run frontend\"",
+    "build": "cd frontend && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
