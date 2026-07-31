@@ -33,8 +33,8 @@ function verifyToken(req, res, next) {
   }
 }
 
-// Health Check
-app.get('/api/health', (req, res) => {
+// Health Check (Supports both /api/health, /health, /api, /)
+app.get(['/api/health', '/health', '/api', '/'], (req, res) => {
   res.json({
     status: 'ok',
     service: 'AI Flower Expert Admin Analytics API Server',
@@ -42,8 +42,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Admin Login Route
-app.post('/api/admin/login', (req, res) => {
+// Admin Login Route (Supports both /api/admin/login and /admin/login)
+app.post(['/api/admin/login', '/admin/login'], (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -83,7 +83,7 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 // Analytics Overview API (Authenticated)
-app.get('/api/analytics/overview', verifyToken, async (req, res) => {
+app.get(['/api/analytics/overview', '/analytics/overview'], verifyToken, async (req, res) => {
   try {
     const { range = '30d' } = req.query;
     const data = await getAnalyticsOverview(range);
@@ -95,7 +95,7 @@ app.get('/api/analytics/overview', verifyToken, async (req, res) => {
 });
 
 // Non-breaking Analytics Ingestion Route
-app.post('/api/analytics/log', async (req, res) => {
+app.post(['/api/analytics/log', '/analytics/log'], async (req, res) => {
   try {
     const eventData = req.body;
     await logAnalyticsEvent(eventData);
