@@ -1,41 +1,54 @@
 import React from 'react';
 import { 
+  Users, 
   Camera, 
   Target, 
-  Bot, 
+  UserCheck, 
   Flower2, 
-  AlertTriangle, 
-  HelpCircle, 
+  Bot, 
   TrendingUp, 
-  BookOpen 
+  ShieldCheck 
 } from 'lucide-react';
 
 export default function ExecutiveKpiCards({ kpis = {} }) {
   const {
+    totalRegisteredUsers = 0,
+    totalFlowerIdentifications = 0,
     totalImageUploads = 0,
     avgAccuracy = 0,
-    totalAiResponses = 0,
+    activeBotanistsToday = 0,
+    activeUsersToday = 0,
     mostIdentifiedFlower = 'N/A',
-    toxicPlantRatio = 0,
-    avgQuestionsPerSession = 0,
-    totalKnowledgeArticles = 0
+    totalAiResponses = 0
   } = kpis;
+
+  const identificationsCount = totalFlowerIdentifications || totalImageUploads || 0;
 
   const cards = [
     {
-      title: 'Total Image Uploads',
-      value: totalImageUploads.toLocaleString(),
-      subtitle: 'Sessions in Flower_Search_History',
+      title: 'Total Registered Users',
+      value: totalRegisteredUsers.toLocaleString(),
+      subtitle: 'Documents in Users collection',
+      icon: Users,
+      badge: 'Live MongoDB',
+      isPositive: true,
+      iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+      badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+    },
+    {
+      title: 'Total Flower Identifications',
+      value: identificationsCount.toLocaleString(),
+      subtitle: 'Records in Flower_Search_History',
       icon: Camera,
-      badge: '+11.8%',
+      badge: 'Predictions',
       isPositive: true,
       iconBg: 'bg-blue-50 text-blue-600 border-blue-100',
       badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200'
     },
     {
-      title: 'Average AI Accuracy',
+      title: 'Average Classifier Accuracy',
       value: `${avgAccuracy}%`,
-      subtitle: 'Mean classification certainty',
+      subtitle: 'Mean model confidence score',
       icon: Target,
       badge: '+1.5%',
       isPositive: true,
@@ -43,19 +56,19 @@ export default function ExecutiveKpiCards({ kpis = {} }) {
       badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200'
     },
     {
-      title: 'Total AI Responses',
-      value: totalAiResponses.toLocaleString(),
-      subtitle: 'Generated botanical turns',
-      icon: Bot,
-      badge: '+17.9%',
+      title: 'Active Botanists Today',
+      value: activeBotanistsToday.toLocaleString(),
+      subtitle: activeUsersToday > 0 ? `${activeUsersToday} total active users today` : 'Botanists active today',
+      icon: UserCheck,
+      badge: 'Active Today',
       isPositive: true,
-      iconBg: 'bg-violet-50 text-violet-600 border-violet-100',
-      badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+      iconBg: 'bg-teal-50 text-teal-600 border-teal-100',
+      badgeBg: 'bg-teal-50 text-teal-700 border-teal-200'
     },
     {
-      title: 'Most Identified Flower',
+      title: 'Top Identified Species',
       value: mostIdentifiedFlower,
-      subtitle: 'Highest frequency species',
+      subtitle: 'Most frequent flower prediction',
       icon: Flower2,
       badge: 'Top Species',
       isPositive: true,
@@ -63,23 +76,13 @@ export default function ExecutiveKpiCards({ kpis = {} }) {
       badgeBg: 'bg-amber-50 text-amber-700 border-amber-200'
     },
     {
-      title: 'Toxic Plant Upload Ratio',
-      value: `${toxicPlantRatio}%`,
-      subtitle: 'Flagged with toxicity warnings',
-      icon: AlertTriangle,
-      badge: toxicPlantRatio > 50 ? 'Warning' : 'Normal',
-      isPositive: false,
-      iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
-      badgeBg: toxicPlantRatio > 50 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-gray-100 text-gray-700 border-gray-200'
-    },
-    {
-      title: 'User Questions / Session',
-      value: avgQuestionsPerSession,
-      subtitle: 'Avg follow-ups per identification',
-      icon: HelpCircle,
+      title: 'Total AI Chat Responses',
+      value: totalAiResponses.toLocaleString(),
+      subtitle: 'Botanical AI turn interactions',
+      icon: Bot,
       badge: 'Engagement',
       isPositive: true,
-      iconBg: 'bg-cyan-50 text-cyan-600 border-cyan-100',
+      iconBg: 'bg-violet-50 text-violet-600 border-violet-100',
       badgeBg: 'bg-blue-50 text-blue-700 border-blue-200'
     }
   ];
@@ -95,7 +98,7 @@ export default function ExecutiveKpiCards({ kpis = {} }) {
           >
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                   {card.title}
                 </span>
                 <div className="text-2xl font-black text-gray-900 tracking-tight capitalize">

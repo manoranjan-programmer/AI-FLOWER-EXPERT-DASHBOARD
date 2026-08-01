@@ -14,7 +14,7 @@ import {
   CartesianGrid, 
   Legend 
 } from 'recharts';
-import { Activity, PieChart as PieIcon, BarChart2, Sun, Droplets, Zap } from 'lucide-react';
+import { Activity, PieChart as PieIcon, BarChart2, Sun, Droplets, Zap, Layers } from 'lucide-react';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#6366f1', '#14b8a6', '#ef4444', '#84cc16'];
 
@@ -24,6 +24,7 @@ export default function AnalyticsCharts({ chartsData = {} }) {
   const {
     topSpecies = [],
     confidenceDistribution = [],
+    familyDistribution = [],
     sunlightBreakdown = [],
     waterBreakdown = [],
     usageTrends = []
@@ -32,16 +33,16 @@ export default function AnalyticsCharts({ chartsData = {} }) {
   return (
     <div className="space-y-6">
 
-      {/* Chart 1: Uploads & Botanical Queries Timeline */}
+      {/* Chart 1: Uploads & Botanical Queries Timeline (Daily Search Volume & Activity Trend) */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
               <Activity className="w-5 h-5 text-blue-600" />
-              Uploads & Botanical Queries Timeline
+              Daily Search Volume & Activity Trend
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Daily trend of flower identifications and AI chat interactions over time.
+              Prediction volume and user search history activity over time (timestamp).
             </p>
           </div>
 
@@ -91,7 +92,7 @@ export default function AnalyticsCharts({ chartsData = {} }) {
         </div>
       </div>
 
-      {/* Row 2: Top 10 Species & Confidence Distribution */}
+      {/* Row 2: Top 10 Species & Botanical Family Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Top 10 Identified Flower Species */}
@@ -99,10 +100,10 @@ export default function AnalyticsCharts({ chartsData = {} }) {
           <div>
             <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
               <BarChart2 className="w-5 h-5 text-blue-600" />
-              Top 10 Identified Flower Species
+              Top Identified Flower Species
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Classification frequency breakdown by plant species.
+              Top 10 identified flowers ranked by search frequency.
             </p>
           </div>
 
@@ -130,15 +131,15 @@ export default function AnalyticsCharts({ chartsData = {} }) {
           </div>
         </div>
 
-        {/* Confidence Score Distribution */}
+        {/* Botanical Family Distribution Pie Chart */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
           <div>
             <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-500" />
-              Confidence Score Distribution
+              <Layers className="w-5 h-5 text-purple-600" />
+              Botanical Family Distribution
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Accuracy and certainty percentage levels across predictions.
+              Breakdown of identified species by botanical family (card.Family).
             </p>
           </div>
 
@@ -146,16 +147,16 @@ export default function AnalyticsCharts({ chartsData = {} }) {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={confidenceDistribution}
+                  data={familyDistribution}
                   cx="50%"
                   cy="50%"
                   innerRadius={55}
                   outerRadius={85}
-                  paddingAngle={5}
+                  paddingAngle={4}
                   dataKey="value"
                 >
-                  {confidenceDistribution.map((entry, index) => (
-                    <Cell key={`cell-conf-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                  {familyDistribution.map((entry, index) => (
+                    <Cell key={`cell-fam-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px' }} />
@@ -167,8 +168,43 @@ export default function AnalyticsCharts({ chartsData = {} }) {
 
       </div>
 
-      {/* Row 3: Plant Care Profiles (Sunlight & Water) */}
+      {/* Row 3: Classifier Confidence Distribution & Plant Care */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Confidence Score Distribution */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-500" />
+              Classifier Confidence Distribution
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Model accuracy score distribution across search histories.
+            </p>
+          </div>
+
+          <div className="h-60 w-full flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={confidenceDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {confidenceDistribution.map((entry, index) => (
+                    <Cell key={`cell-conf-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px' }} />
+                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '11px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
         {/* Sunlight Requirements */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
@@ -178,7 +214,7 @@ export default function AnalyticsCharts({ chartsData = {} }) {
               Plant Care: Sunlight Requirements
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Distribution of sunlight requirements for classified species.
+              Light level preferences for identified flower species.
             </p>
           </div>
 
@@ -190,31 +226,6 @@ export default function AnalyticsCharts({ chartsData = {} }) {
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
                 <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px' }} />
                 <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Water Requirements */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <Droplets className="w-5 h-5 text-cyan-600" />
-              Plant Care: Water Requirements
-            </h3>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Irrigation requirements breakdown for identified flowers.
-            </p>
-          </div>
-
-          <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={waterBreakdown} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.6} />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
-                <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px' }} />
-                <Bar dataKey="value" fill="#06b6d4" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { 
   LayoutDashboard, 
+  Users,
   BarChart3, 
   BookOpen, 
   MessageSquare, 
@@ -28,6 +29,8 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
 
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'users', label: 'User Leaderboard', icon: Users },
+    { id: 'prediction_feed', label: 'Recent Prediction Feed', icon: History },
     { id: 'insights', label: 'AI Insights & Forecasts', icon: BrainCircuit },
     { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
     { id: 'charts', label: 'Analytics Charts', icon: BarChart3 },

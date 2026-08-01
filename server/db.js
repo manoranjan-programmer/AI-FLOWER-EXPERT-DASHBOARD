@@ -29,7 +29,19 @@ function getCollection(collName) {
 }
 
 // Read-only helpers for existing collections
-async function getSearchHistory(query = {}, limit = 500) {
+async function getUsers(query = {}, limit = 500) {
+  try {
+    const database = await connectDB();
+    if (!database) return [];
+    const usersColl = database.collection(process.env.MONGO_USERS_COLLECTION || 'Users');
+    return await usersColl.find(query).sort({ created_at: -1 }).limit(limit).toArray();
+  } catch (err) {
+    console.error('Error fetching users:', err.message);
+    return [];
+  }
+}
+
+async function getSearchHistory(query = {}, limit = 1000) {
   try {
     const database = await connectDB();
     if (!database) return [];
@@ -74,7 +86,9 @@ async function logAnalyticsEvent(eventData) {
 module.exports = {
   connectDB,
   getCollection,
+  getUsers,
   getSearchHistory,
   getFlowerKnowledge,
   logAnalyticsEvent
 };
+

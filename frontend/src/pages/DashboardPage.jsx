@@ -3,6 +3,8 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import FilterPanel from '../components/FilterPanel';
 import ExecutiveKpiCards from '../components/ExecutiveKpiCards';
+import UserLeaderboard from '../components/UserLeaderboard';
+import RecentPredictionFeed from '../components/RecentPredictionFeed';
 import AiInsightsPanel from '../components/AiInsightsPanel';
 import AnalyticsCharts from '../components/AnalyticsCharts';
 import ImageGalleryInspector from '../components/ImageGalleryInspector';
@@ -11,7 +13,24 @@ import TablesSection from '../components/TablesSection';
 import SettingsPanel from '../components/SettingsPanel';
 import HelpDocsPanel from '../components/HelpDocsPanel';
 import { fetchAnalyticsOverview } from '../services/api';
-import { Sparkles, Layers, Image as ImageIcon, MessageSquare, BarChart3, BookOpen, ShieldCheck, BrainCircuit, Calendar, Download, Share2, Settings, HelpCircle, FileText } from 'lucide-react';
+import { 
+  Sparkles, 
+  Layers, 
+  Users, 
+  History, 
+  Image as ImageIcon, 
+  MessageSquare, 
+  BarChart3, 
+  BookOpen, 
+  ShieldCheck, 
+  BrainCircuit, 
+  Calendar, 
+  Download, 
+  Share2, 
+  Settings, 
+  HelpCircle, 
+  FileText 
+} from 'lucide-react';
 
 export default function DashboardPage() {
   const [collapsed, setCollapsed] = useState(false);
@@ -74,46 +93,46 @@ export default function DashboardPage() {
     let galleryItems = rawData.tables?.galleryItems || [];
     let chatSessions = rawData.tables?.chatSessions || [];
     let knowledgeBase = rawData.tables?.knowledgeBase || [];
+    let registeredUsers = rawData.tables?.registeredUsers || [];
+    let recentPredictions = rawData.tables?.recentPredictions || [];
 
     if (effectiveSearch) {
       const q = effectiveSearch.toLowerCase();
       galleryItems = galleryItems.filter(item => JSON.stringify(item).toLowerCase().includes(q));
       chatSessions = chatSessions.filter(item => JSON.stringify(item).toLowerCase().includes(q));
       knowledgeBase = knowledgeBase.filter(item => JSON.stringify(item).toLowerCase().includes(q));
+      registeredUsers = registeredUsers.filter(item => JSON.stringify(item).toLowerCase().includes(q));
+      recentPredictions = recentPredictions.filter(item => JSON.stringify(item).toLowerCase().includes(q));
     }
 
     if (status && status !== 'ALL') {
       if (status === 'high') {
         galleryItems = galleryItems.filter(i => i.confidence >= 90);
         chatSessions = chatSessions.filter(i => i.confidence >= 90);
+        recentPredictions = recentPredictions.filter(i => i.confidence >= 90);
       } else if (status === 'moderate') {
         galleryItems = galleryItems.filter(i => i.confidence >= 70 && i.confidence < 90);
         chatSessions = chatSessions.filter(i => i.confidence >= 70 && i.confidence < 90);
+        recentPredictions = recentPredictions.filter(i => i.confidence >= 70 && i.confidence < 90);
       } else if (status === 'low') {
         galleryItems = galleryItems.filter(i => i.confidence < 70);
         chatSessions = chatSessions.filter(i => i.confidence < 70);
+        recentPredictions = recentPredictions.filter(i => i.confidence < 70);
       } else if (status === 'toxic') {
         knowledgeBase = knowledgeBase.filter(i => i.toxicity.toLowerCase().includes('toxic') && !i.toxicity.toLowerCase().includes('non-toxic'));
       }
     }
 
-    // Dynamic Recalculation of KPIs based on filtered galleryItems
-    const totalUploads = galleryItems.length > 0 ? galleryItems.length : rawData.kpis.totalImageUploads;
-    const totalConf = galleryItems.reduce((acc, curr) => acc + (curr.confidence || 0), 0);
-    const avgAccuracy = galleryItems.length > 0 ? parseFloat((totalConf / galleryItems.length).toFixed(1)) : rawData.kpis.avgAccuracy;
-
     return {
-      kpis: {
-        ...rawData.kpis,
-        totalImageUploads: totalUploads,
-        avgAccuracy: avgAccuracy
-      },
+      kpis: rawData.kpis,
       charts: rawData.charts,
       tables: {
         ...rawData.tables,
         galleryItems,
         chatSessions,
-        knowledgeBase
+        knowledgeBase,
+        registeredUsers,
+        recentPredictions
       }
     };
   }, [rawData, appliedFilters, searchQuery]);
@@ -164,14 +183,14 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white border border-gray-200 shadow-sm relative overflow-hidden">
             <div className="space-y-1 relative z-10">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold mb-1">
-                <Sparkles className="w-3.5 h-3.5" /> AI Botanical SaaS Platform
+                <Sparkles className="w-3.5 h-3.5" /> AI Botanical SaaS Analytics Platform
               </div>
               <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 flex items-center gap-2">
-                AI Flower Expert Analytics & Insights
+                AI Flower Expert Analytics Dashboard
               </h1>
               <p className="text-xs text-gray-500 font-medium flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                <span>Today is {currentDateStr}</span> • <span>Live MongoDB Atlas Aggregations</span>
+                <span>Today is {currentDateStr}</span> • <span className="font-bold text-blue-600">MongoDB Atlas DB Connected: `test`</span>
               </p>
             </div>
 
@@ -195,10 +214,11 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white border border-gray-200 shadow-sm text-xs font-bold">
             {[
               { id: 'overview', label: 'Executive Overview', icon: Layers },
-              { id: 'insights', label: 'AI Insights & Forecasts', icon: BrainCircuit },
-              { id: 'knowledge', label: 'Botanical Knowledge Base', icon: BookOpen },
+              { id: 'users', label: 'User Leaderboard & Activity', icon: Users },
+              { id: 'prediction_feed', label: 'Recent Predictions Feed', icon: History },
               { id: 'charts', label: 'Visual Analytics & Charts', icon: BarChart3 },
-              { id: 'conversations', label: 'AI Chat Inspector & Logs', icon: MessageSquare },
+              { id: 'knowledge', label: 'Botanical Knowledge Base', icon: BookOpen },
+              { id: 'insights', label: 'AI Insights & Forecasts', icon: BrainCircuit },
             ].map(tab => {
               const Icon = tab.icon;
               return (
@@ -232,15 +252,34 @@ export default function DashboardPage() {
           {activeTab === 'overview' && (
             <>
               <ExecutiveKpiCards kpis={kpis} />
+              <UserLeaderboard registeredUsers={tables.registeredUsers} />
+              <RecentPredictionFeed predictions={tables.recentPredictions} />
+              <AnalyticsCharts chartsData={charts} />
               <AiInsightsPanel kpis={kpis} chartsData={charts} />
               <KnowledgeBaseInspector knowledgeBase={tables.knowledgeBase} />
-              <AnalyticsCharts chartsData={charts} />
               <ImageGalleryInspector galleryItems={tables.galleryItems} />
               <TablesSection tablesData={tables} activeTab={activeTab} />
             </>
           )}
 
-          {/* 2. AI INSIGHTS & FORECASTS TAB */}
+          {/* 2. USER LEADERBOARD TAB */}
+          {activeTab === 'users' && (
+            <>
+              <ExecutiveKpiCards kpis={kpis} />
+              <UserLeaderboard registeredUsers={tables.registeredUsers} />
+            </>
+          )}
+
+          {/* 3. RECENT PREDICTION FEED TAB */}
+          {(activeTab === 'prediction_feed' || activeTab === 'predictions') && (
+            <>
+              <ExecutiveKpiCards kpis={kpis} />
+              <RecentPredictionFeed predictions={tables.recentPredictions} />
+              <TablesSection tablesData={tables} activeTab="predictions" />
+            </>
+          )}
+
+          {/* 4. AI INSIGHTS & FORECASTS TAB */}
           {activeTab === 'insights' && (
             <>
               <ExecutiveKpiCards kpis={kpis} />
@@ -248,12 +287,12 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* 3. KNOWLEDGE BASE TAB */}
+          {/* 5. KNOWLEDGE BASE TAB */}
           {activeTab === 'knowledge' && (
             <KnowledgeBaseInspector knowledgeBase={tables.knowledgeBase} />
           )}
 
-          {/* 4. ANALYTICS CHARTS TAB */}
+          {/* 6. ANALYTICS CHARTS TAB */}
           {activeTab === 'charts' && (
             <>
               <ExecutiveKpiCards kpis={kpis} />
@@ -261,7 +300,7 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* 5. UPLOADS & GALLERY TAB */}
+          {/* 7. UPLOADS & GALLERY TAB */}
           {(activeTab === 'uploads' || activeTab === 'gallery') && (
             <>
               <ImageGalleryInspector galleryItems={tables.galleryItems} />
@@ -269,32 +308,27 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* 6. CONVERSATIONS & RECENT CHATS TAB */}
+          {/* 8. CONVERSATIONS & RECENT CHATS TAB */}
           {activeTab === 'conversations' && (
             <TablesSection tablesData={tables} activeTab="conversations" />
           )}
 
-          {/* 7. PREDICTIONS TAB */}
-          {activeTab === 'predictions' && (
-            <TablesSection tablesData={tables} activeTab="predictions" />
-          )}
-
-          {/* 8. SEARCH HISTORY TAB */}
+          {/* 9. SEARCH HISTORY TAB */}
           {activeTab === 'searches' && (
             <TablesSection tablesData={tables} activeTab="searches" />
           )}
 
-          {/* 9. USER FEEDBACK TAB */}
+          {/* 10. USER FEEDBACK TAB */}
           {activeTab === 'feedback' && (
             <TablesSection tablesData={tables} activeTab="feedback" />
           )}
 
-          {/* 10. ERROR & API LOGS TAB */}
+          {/* 11. ERROR & API LOGS TAB */}
           {activeTab === 'logs' && (
             <TablesSection tablesData={tables} activeTab="logs" />
           )}
 
-          {/* 11. REPORTS TAB */}
+          {/* 12. REPORTS TAB */}
           {activeTab === 'reports' && (
             <>
               <ExecutiveKpiCards kpis={kpis} />
@@ -302,12 +336,12 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* 12. SETTINGS TAB */}
+          {/* 13. SETTINGS TAB */}
           {activeTab === 'settings' && (
             <SettingsPanel />
           )}
 
-          {/* 13. HELP & DOCS TAB */}
+          {/* 14. HELP & DOCS TAB */}
           {activeTab === 'help' && (
             <HelpDocsPanel />
           )}
