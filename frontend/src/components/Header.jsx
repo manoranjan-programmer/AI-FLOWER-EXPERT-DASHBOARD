@@ -12,6 +12,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logo.png';
+import adminAvatar from '../assets/admin-avatar.png';
 
 export default function Header({ 
   dateRange, 
@@ -130,7 +132,7 @@ export default function Header({
             className="flex items-center gap-2.5 p-1.5 pl-2.5 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
           >
             <img 
-              src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"} 
+              src={(user?.avatar && !user.avatar.includes('unsplash') && !user.avatar.includes('logo.png')) ? user.avatar : adminAvatar} 
               alt="Avatar" 
               className="w-7 h-7 rounded-full object-cover ring-2 ring-blue-500/20"
             />

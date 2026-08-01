@@ -20,6 +20,8 @@ import {
   FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logo.png';
+import adminAvatar from '../assets/admin-avatar.png';
 
 export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
   const { logout, user } = useAuth();
@@ -48,9 +50,7 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
       {/* Brand Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="p-2 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
-            <Flower2 className="w-6 h-6 animate-spin-slow" />
-          </div>
+          <img src={logo} alt="AI Flower Expert Logo" className="w-10 h-10 object-contain rounded-xl flex-shrink-0" />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="font-extrabold text-base tracking-tight text-gray-900">
@@ -99,7 +99,7 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
         {!collapsed && (
           <div className="flex items-center gap-3 p-2 rounded-xl bg-white border border-gray-200 shadow-sm">
             <img 
-              src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"} 
+              src={(user?.avatar && !user.avatar.includes('unsplash') && !user.avatar.includes('logo.png')) ? user.avatar : adminAvatar} 
               alt="Avatar" 
               className="w-8 h-8 rounded-full ring-2 ring-blue-500/20 object-cover"
             />

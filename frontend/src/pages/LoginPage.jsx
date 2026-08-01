@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Flower2, Eye, EyeOff, Lock, Mail, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { loginAdmin } from '../services/api';
+import logo from '../assets/logo.png';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -40,8 +41,8 @@ export default function LoginPage() {
           
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="inline-flex p-3 rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/20 mb-2">
-              <Flower2 className="w-8 h-8" />
+            <div className="inline-flex p-1.5 rounded-2xl bg-gray-50 border border-gray-100 shadow-sm mb-2">
+              <img src={logo} alt="AI Flower Expert Logo" className="w-16 h-16 object-contain rounded-xl" />
             </div>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">
               AI Flower Expert Dashboard
