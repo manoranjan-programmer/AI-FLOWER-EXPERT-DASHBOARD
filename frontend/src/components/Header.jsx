@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  RefreshCw, 
-  Calendar, 
-  Search, 
-  Bell, 
+import {
+  RefreshCw,
+  Calendar,
+  Search,
+  Bell,
   Database,
   Radio,
   User,
@@ -15,10 +15,10 @@ import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
 import adminAvatar from '../assets/admin-avatar.png';
 
-export default function Header({ 
-  dateRange, 
-  setDateRange, 
-  onRefresh, 
+export default function Header({
+  dateRange,
+  setDateRange,
+  onRefresh,
   loading,
   searchQuery,
   setSearchQuery,
@@ -38,7 +38,7 @@ export default function Header({
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 transition-colors shadow-sm">
-      
+
       {/* Title & Search Input */}
       <div className="flex items-center gap-6">
         <div className="hidden md:flex flex-col">
@@ -73,11 +73,10 @@ export default function Header({
         {/* Auto-Refresh Toggle */}
         <button
           onClick={() => setAutoRefresh && setAutoRefresh(!autoRefresh)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-            autoRefresh
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${autoRefresh
               ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm'
               : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-          }`}
+            }`}
           title={autoRefresh ? 'Live auto-refresh enabled (5s)' : 'Enable live auto-refresh (5s)'}
         >
           <Radio className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-pulse text-blue-600' : ''}`} />
@@ -131,9 +130,9 @@ export default function Header({
             onClick={() => setProfileOpen(!profileOpen)}
             className="flex items-center gap-2.5 p-1.5 pl-2.5 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
           >
-            <img 
-              src={(user?.avatar && !user.avatar.includes('unsplash') && !user.avatar.includes('logo.png')) ? user.avatar : adminAvatar} 
-              alt="Avatar" 
+            <img
+              src={(user?.avatar && !user.avatar.includes('unsplash') && !user.avatar.includes('logo.png')) ? user.avatar : adminAvatar}
+              alt="Avatar"
               className="w-7 h-7 rounded-full object-cover ring-2 ring-blue-500/20"
             />
             <span className="text-xs font-bold text-gray-900 hidden md:inline-block truncate max-w-[100px]">
@@ -146,7 +145,7 @@ export default function Header({
             <div className="absolute right-0 mt-2 w-48 p-2 bg-white rounded-2xl border border-gray-200 shadow-xl text-xs space-y-1 z-50">
               <div className="px-3 py-2 border-b border-gray-100 space-y-0.5">
                 <p className="font-bold text-gray-900">{user?.name || 'System Admin'}</p>
-                <p className="text-[10px] text-gray-500 truncate">{user?.email || 'admin@aflowerexpert.com'}</p>
+                <p className="text-[10px] text-gray-500 truncate">{user?.email || 'admin@aiflowerexpert.com'}</p>
               </div>
               <button
                 onClick={logout}
