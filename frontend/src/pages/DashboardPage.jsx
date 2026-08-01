@@ -219,12 +219,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Interactive Multi-Dimensional Filter Bar */}
-          <FilterPanel 
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-            onApplyFilters={handleApplyFilters}
-            onResetFilters={handleResetFilters}
-          />
+          {activeTab !== 'knowledge' && (
+            <FilterPanel 
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+              onApplyFilters={handleApplyFilters}
+              onResetFilters={handleResetFilters}
+            />
+          )}
 
           {/* 1. OVERVIEW TAB */}
           {activeTab === 'overview' && (

@@ -1,12 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   BookOpen, 
-  Search, 
-  Filter, 
   Sun, 
   Droplets, 
-  ShieldAlert, 
-  FileText, 
   X, 
   Sparkles, 
   ChevronLeft, 
@@ -15,45 +11,16 @@ import {
 } from 'lucide-react';
 
 export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [familyFilter, setFamilyFilter] = useState('ALL');
-  const [sunlightFilter, setSunlightFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
   const itemsPerPage = 8;
 
-  // Extract unique families for filter
-  const families = useMemo(() => {
-    const set = new Set();
-    knowledgeBase.forEach(item => {
-      if (item.family) set.add(item.family);
-    });
-    return Array.from(set).sort();
-  }, [knowledgeBase]);
-
-  // Filtered dataset
-  const filteredData = useMemo(() => {
-    return knowledgeBase.filter(item => {
-      const searchMatch = !searchTerm ||
-        (item.flower && item.flower.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.scientific_name && item.scientific_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.family && item.family.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.native_region && item.native_region.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      const familyMatch = familyFilter === 'ALL' || item.family === familyFilter;
-      const sunlightMatch = sunlightFilter === 'ALL' || (item.sunlight && item.sunlight.toLowerCase().includes(sunlightFilter.toLowerCase()));
-
-      return searchMatch && familyMatch && sunlightMatch;
-    });
-  }, [knowledgeBase, searchTerm, familyFilter, sunlightFilter]);
-
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+  const totalPages = Math.ceil(knowledgeBase.length / itemsPerPage) || 1;
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
-    return filteredData.slice(start, start + itemsPerPage);
-  }, [filteredData, currentPage]);
+    return knowledgeBase.slice(start, start + itemsPerPage);
+  }, [knowledgeBase, currentPage]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
@@ -74,53 +41,6 @@ export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
           <Sparkles className="w-4 h-4 text-blue-600" />
           <span>{knowledgeBase.length} Live Botanical Articles</span>
         </div>
-      </div>
-
-      {/* Filter Controls */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
-        
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search species, scientific name, region..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg bg-white text-gray-900 placeholder-gray-400 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-          />
-        </div>
-
-        {/* Family Filter */}
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-gray-400" />
-          <select
-            value={familyFilter}
-            onChange={(e) => setFamilyFilter(e.target.value)}
-            className="w-full py-1.5 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium"
-          >
-            <option value="ALL">All Botanical Families</option>
-            {families.map(fam => (
-              <option key={fam} value={fam}>{fam}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Sunlight Filter */}
-        <div className="flex items-center gap-2">
-          <Sun className="w-4 h-4 text-amber-500" />
-          <select
-            value={sunlightFilter}
-            onChange={(e) => setSunlightFilter(e.target.value)}
-            className="w-full py-1.5 px-3 text-xs rounded-lg bg-white text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium"
-          >
-            <option value="ALL">All Sunlight Requirements</option>
-            <option value="Full Sun">Full Sun</option>
-            <option value="Partial">Partial Sun / Shade</option>
-            <option value="Indirect">Indirect Light</option>
-          </select>
-        </div>
-
       </div>
 
       {/* Table */}
@@ -160,7 +80,7 @@ export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
                   </td>
                   <td className="py-3 px-4">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      item.toxicity.toLowerCase().includes('toxic') && !item.toxicity.toLowerCase().includes('non-toxic')
+                      item.toxicity?.toLowerCase().includes('toxic') && !item.toxicity?.toLowerCase().includes('non-toxic')
                         ? 'bg-rose-50 text-rose-700 border-rose-200'
                         : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     }`}>
@@ -180,7 +100,7 @@ export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
             ) : (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-gray-400 font-medium">
-                  No knowledge base articles match your search query.
+                  No knowledge base articles available.
                 </td>
               </tr>
             )}
@@ -191,7 +111,7 @@ export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
       {/* Pagination Footer */}
       <div className="flex items-center justify-between pt-2 text-xs text-gray-500">
         <span>
-          Showing {paginatedData.length} of {filteredData.length} articles
+          Showing {paginatedData.length} of {knowledgeBase.length} articles
         </span>
 
         <div className="flex items-center gap-2">

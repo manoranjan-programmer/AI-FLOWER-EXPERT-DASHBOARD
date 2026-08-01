@@ -10,6 +10,20 @@ const { getSearchHistory, getFlowerKnowledge } = require('../db');
 const { generateSynthesizedData } = require('./seedService');
 
 /**
+ * Generates array of YYYY-MM-DD date strings for given day count
+ */
+function generateDateSeries(days = 30) {
+  const dates = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  return dates;
+}
+
+/**
  * Parses confidence percentage into float (0-100)
  */
 function parseConfidence(conf) {
@@ -38,8 +52,9 @@ async function getAnalyticsOverview(dateRange = '30d') {
   // Fetch raw records from MongoDB Atlas
   const realHistory = await getSearchHistory({}, 1000);
   const realKnowledge = await getFlowerKnowledge({}, 1000);
+  const hasRealData = realHistory.length > 0;
 
-  // Generate fallback base dataset
+  // Generate fallback base dataset if DB is empty
   const baseData = generateSynthesizedData(dateRange);
 
   // Build a lookup map from Knowledge Base
@@ -87,6 +102,23 @@ async function getAnalyticsOverview(dateRange = '30d') {
   const galleryItems = [];
   const chatSessions = [];
 
+  // Generate date series for real daily timeline aggregation
+  const daysCount = dateRange === '7d' ? 7 : dateRange === '90d' ? 90 : 30;
+  const datesList = generateDateSeries(daysCount);
+  const dailyMap = {};
+
+  datesList.forEach(d => {
+    dailyMap[d] = {
+      date: d,
+      uploads: 0,
+      chats: 0,
+      predictions: 0,
+      userSet: new Set(),
+      confidenceSum: 0,
+      confidenceCount: 0
+    };
+  });
+
   realHistory.forEach((rec, idx) => {
     // 1. Species & Scientific Name
     const flowerName = (rec.flower || rec.flower_name || 'Unknown Flower').trim();
@@ -115,7 +147,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
       else if (msg.role === 'user') userMsgs++;
     });
 
-    // If default messages empty, assume at least 1 assistant response
     if (messages.length === 0) assistantMsgs = 1;
     totalAiResponsesCount += assistantMsgs;
     totalUserQuestionsCount += userMsgs;
@@ -159,6 +190,63 @@ async function getAnalyticsOverview(dateRange = '30d') {
         { role: 'assistant', content: rec.summary || `Identification overview for ${flowerName}.`, timestamp: rec.timestamp }
       ]
     });
+
+    // 8. Daily Timeline Real Aggregation
+    let dateStr = null;
+    if (rec.timestamp) {
+      const dObj = new Date(rec.timestamp);
+      if (!isNaN(dObj.getTime())) dateStr = dObj.toISOString().split('T')[0];
+    }
+    if (!dateStr && rec.searched_at) {
+      const dObj = new Date(rec.searched_at);
+      if (!isNaN(dObj.getTime())) dateStr = dObj.toISOString().split('T')[0];
+    }
+    if (!dateStr && rec._id && typeof rec._id.getTimestamp === 'function') {
+      try {
+        dateStr = rec._id.getTimestamp().toISOString().split('T')[0];
+      } catch (e) {}
+    }
+
+    if (dateStr) {
+      if (!dailyMap[dateStr]) {
+        dailyMap[dateStr] = {
+          date: dateStr,
+          uploads: 0,
+          chats: 0,
+          predictions: 0,
+          userSet: new Set(),
+          confidenceSum: 0,
+          confidenceCount: 0
+        };
+        if (!datesList.includes(dateStr)) {
+          datesList.push(dateStr);
+        }
+      }
+
+      dailyMap[dateStr].uploads += 1;
+      dailyMap[dateStr].predictions += 1;
+      dailyMap[dateStr].chats += (messages.length || 1);
+      const userId = rec.user || rec.session_id || `user_${idx}`;
+      dailyMap[dateStr].userSet.add(userId);
+      dailyMap[dateStr].confidenceSum += confVal;
+      dailyMap[dateStr].confidenceCount += 1;
+    }
+  });
+
+  // Ensure dates are sorted chronologically
+  datesList.sort();
+
+  const realUsageTrends = datesList.map(d => {
+    const item = dailyMap[d];
+    return {
+      date: d,
+      uploads: item.uploads,
+      chats: item.chats,
+      predictions: item.predictions,
+      users: item.userSet.size,
+      responses: item.chats,
+      avgConfidence: item.confidenceCount > 0 ? parseFloat((item.confidenceSum / item.confidenceCount).toFixed(1)) : 0
+    };
   });
 
   // If MongoDB history is empty, synthesize gallery & sessions from baseData
@@ -218,10 +306,10 @@ async function getAnalyticsOverview(dateRange = '30d') {
 
   // Confidence distribution chart data
   const confidenceChart = [
-    { name: 'Excellent (>95%)', value: confidenceBuckets.excellent || 45, color: '#10b981' },
-    { name: 'High (80-95%)', value: confidenceBuckets.high || 30, color: '#3b82f6' },
-    { name: 'Moderate (60-80%)', value: confidenceBuckets.moderate || 15, color: '#f59e0b' },
-    { name: 'Low (<60%)', value: confidenceBuckets.low || 10, color: '#ef4444' }
+    { name: 'Excellent (>95%)', value: hasRealData ? confidenceBuckets.excellent : (confidenceBuckets.excellent || 45), color: '#10b981' },
+    { name: 'High (80-95%)', value: hasRealData ? confidenceBuckets.high : (confidenceBuckets.high || 30), color: '#3b82f6' },
+    { name: 'Moderate (60-80%)', value: hasRealData ? confidenceBuckets.moderate : (confidenceBuckets.moderate || 15), color: '#f59e0b' },
+    { name: 'Low (<60%)', value: hasRealData ? confidenceBuckets.low : (confidenceBuckets.low || 10), color: '#ef4444' }
   ];
 
   // Plant care profiles chart data
@@ -257,7 +345,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
       confidenceDistribution: confidenceChart,
       sunlightBreakdown: sunlightChart,
       waterBreakdown: waterChart,
-      usageTrends: baseData.charts.usageTrends
+      usageTrends: hasRealData ? realUsageTrends : baseData.charts.usageTrends
     },
     tables: {
       galleryItems: galleryItems,
@@ -270,3 +358,4 @@ async function getAnalyticsOverview(dateRange = '30d') {
 module.exports = {
   getAnalyticsOverview
 };
+
