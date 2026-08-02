@@ -12,6 +12,7 @@ import KnowledgeBaseInspector from '../components/KnowledgeBaseInspector';
 import TablesSection from '../components/TablesSection';
 import SettingsPanel from '../components/SettingsPanel';
 import HelpDocsPanel from '../components/HelpDocsPanel';
+import FeedbackAnalytics from './views/FeedbackAnalytics';
 import { fetchAnalyticsOverview } from '../services/api';
 import {
   Sparkles,
@@ -29,7 +30,8 @@ import {
   Share2,
   Settings,
   HelpCircle,
-  FileText
+  FileText,
+  Star
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -86,7 +88,7 @@ export default function DashboardPage() {
   // Dynamic Filtering Engine
   const data = useMemo(() => {
     if (!rawData) return null;
-    const { category, region, status, search } = appliedFilters;
+    const { category, status, search } = appliedFilters;
     const effectiveSearch = searchQuery || search || '';
 
     // Filter Table / Inspector Items
@@ -95,6 +97,8 @@ export default function DashboardPage() {
     let knowledgeBase = rawData.tables?.knowledgeBase || [];
     let registeredUsers = rawData.tables?.registeredUsers || [];
     let recentPredictions = rawData.tables?.recentPredictions || [];
+    let chatbotLogs = rawData.tables?.chatbotPerformanceLogs || [];
+    let classLogs = rawData.tables?.classificationLogs || [];
 
     if (effectiveSearch) {
       const q = effectiveSearch.toLowerCase();
@@ -103,36 +107,112 @@ export default function DashboardPage() {
       knowledgeBase = knowledgeBase.filter(item => JSON.stringify(item).toLowerCase().includes(q));
       registeredUsers = registeredUsers.filter(item => JSON.stringify(item).toLowerCase().includes(q));
       recentPredictions = recentPredictions.filter(item => JSON.stringify(item).toLowerCase().includes(q));
+      chatbotLogs = chatbotLogs.filter(item => JSON.stringify(item).toLowerCase().includes(q));
+      classLogs = classLogs.filter(item => JSON.stringify(item).toLowerCase().includes(q));
     }
 
     if (status && status !== 'ALL') {
       if (status === 'high') {
-        galleryItems = galleryItems.filter(i => i.confidence >= 90);
-        chatSessions = chatSessions.filter(i => i.confidence >= 90);
-        recentPredictions = recentPredictions.filter(i => i.confidence >= 90);
+        galleryItems = galleryItems.filter(i => (parseFloat(i.confidence) || 0) >= 90);
+        chatSessions = chatSessions.filter(i => (parseFloat(i.confidence) || 0) >= 90);
+        recentPredictions = recentPredictions.filter(i => (parseFloat(i.confidence) || 0) >= 90);
+        classLogs = classLogs.filter(i => (parseFloat(i.classifier_confidence) || 0) >= 90);
       } else if (status === 'moderate') {
-        galleryItems = galleryItems.filter(i => i.confidence >= 70 && i.confidence < 90);
-        chatSessions = chatSessions.filter(i => i.confidence >= 70 && i.confidence < 90);
-        recentPredictions = recentPredictions.filter(i => i.confidence >= 70 && i.confidence < 90);
+        galleryItems = galleryItems.filter(i => (parseFloat(i.confidence) || 0) >= 70 && (parseFloat(i.confidence) || 0) < 90);
+        chatSessions = chatSessions.filter(i => (parseFloat(i.confidence) || 0) >= 70 && (parseFloat(i.confidence) || 0) < 90);
+        recentPredictions = recentPredictions.filter(i => (parseFloat(i.confidence) || 0) >= 70 && (parseFloat(i.confidence) || 0) < 90);
+        classLogs = classLogs.filter(i => (parseFloat(i.classifier_confidence) || 0) >= 70 && (parseFloat(i.classifier_confidence) || 0) < 90);
       } else if (status === 'low') {
-        galleryItems = galleryItems.filter(i => i.confidence < 70);
-        chatSessions = chatSessions.filter(i => i.confidence < 70);
-        recentPredictions = recentPredictions.filter(i => i.confidence < 70);
+        galleryItems = galleryItems.filter(i => (parseFloat(i.confidence) || 0) < 70);
+        chatSessions = chatSessions.filter(i => (parseFloat(i.confidence) || 0) < 70);
+        recentPredictions = recentPredictions.filter(i => (parseFloat(i.confidence) || 0) < 70);
+        classLogs = classLogs.filter(i => (parseFloat(i.classifier_confidence) || 0) < 70);
       } else if (status === 'toxic') {
-        knowledgeBase = knowledgeBase.filter(i => i.toxicity.toLowerCase().includes('toxic') && !i.toxicity.toLowerCase().includes('non-toxic'));
+        knowledgeBase = knowledgeBase.filter(i => String(i.toxicity || '').toLowerCase().includes('toxic') && !String(i.toxicity || '').toLowerCase().includes('non-toxic'));
       }
     }
 
+    if (category && category !== 'ALL') {
+      if (category === 'classification') {
+        chatSessions = [];
+      } else if (category === 'chat') {
+        recentPredictions = [];
+        galleryItems = [];
+      } else if (category === 'knowledge') {
+        galleryItems = [];
+        recentPredictions = [];
+        chatSessions = [];
+      }
+    }
+
+    // Recalculate KPIs based on filtered datasets
+    const totalUsersCount = registeredUsers.length;
+    const totalConversationsCount = chatSessions.length;
+    const totalPredictionsCount = recentPredictions.length;
+    const totalUploadsCount = galleryItems.length;
+
+    const confSum = recentPredictions.reduce((sum, item) => sum + (parseFloat(item.confidence) || 0), 0);
+    const avgAcc = recentPredictions.length > 0
+      ? parseFloat((confSum / recentPredictions.length).toFixed(1))
+      : (rawData.kpis?.avgAccuracy || 94.8);
+
+    const filteredKpis = {
+      ...rawData.kpis,
+      totalRegisteredUsers: totalUsersCount,
+      totalChats: totalConversationsCount,
+      totalFlowerIdentifications: totalPredictionsCount,
+      totalImageUploads: totalUploadsCount,
+      avgAccuracy: avgAcc,
+    };
+
+    // Recalculate Top Species Chart
+    const speciesMap = {};
+    recentPredictions.forEach(p => {
+      const name = p.flower || 'Unknown';
+      speciesMap[name] = (speciesMap[name] || 0) + 1;
+    });
+
+    const topSpeciesChart = Object.keys(speciesMap).length > 0
+      ? Object.entries(speciesMap).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10)
+      : (rawData.charts?.topSpecies || []);
+
+    // Recalculate Confidence Chart
+    let excellent = 0, high = 0, moderate = 0, low = 0;
+    recentPredictions.forEach(p => {
+      const conf = parseFloat(p.confidence) || 0;
+      if (conf > 95) excellent++;
+      else if (conf >= 80) high++;
+      else if (conf >= 60) moderate++;
+      else low++;
+    });
+
+    const confidenceChart = recentPredictions.length > 0
+      ? [
+          { name: 'Excellent (>95%)', value: excellent, color: '#10b981' },
+          { name: 'High (80-95%)', value: high, color: '#3b82f6' },
+          { name: 'Moderate (60-80%)', value: moderate, color: '#f59e0b' },
+          { name: 'Low (<60%)', value: low, color: '#ef4444' }
+        ]
+      : (rawData.charts?.confidenceDistribution || []);
+
+    const filteredCharts = {
+      ...rawData.charts,
+      topSpecies: topSpeciesChart,
+      confidenceDistribution: confidenceChart,
+    };
+
     return {
-      kpis: rawData.kpis,
-      charts: rawData.charts,
+      kpis: filteredKpis,
+      charts: filteredCharts,
       tables: {
         ...rawData.tables,
         galleryItems,
         chatSessions,
         knowledgeBase,
         registeredUsers,
-        recentPredictions
+        recentPredictions,
+        chatbotPerformanceLogs: chatbotLogs,
+        classificationLogs: classLogs
       }
     };
   }, [rawData, appliedFilters, searchQuery]);
@@ -213,6 +293,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-white border border-gray-200 shadow-sm text-xs font-bold">
             {[
               { id: 'overview', label: 'Executive Overview', icon: Layers },
+              { id: 'feedback', label: 'User Feedback Analytics', icon: Star },
               { id: 'users', label: 'User Leaderboard & Activity', icon: Users },
               { id: 'prediction_feed', label: 'Recent Predictions Feed', icon: History },
               { id: 'charts', label: 'Visual Analytics & Charts', icon: BarChart3 },
@@ -348,7 +429,7 @@ export default function DashboardPage() {
 
           {/* 10. USER FEEDBACK TAB */}
           {activeTab === 'feedback' && (
-            <TablesSection tablesData={tables} activeTab="feedback" />
+            <FeedbackAnalytics />
           )}
 
           {/* 12. REPORTS TAB */}

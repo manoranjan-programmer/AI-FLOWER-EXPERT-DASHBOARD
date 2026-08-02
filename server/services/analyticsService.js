@@ -17,7 +17,8 @@ const {
   getChatbotPerformance,
   getClassificationAnalytics,
   getUserActivity,
-  getAnalyticsLogs
+  getAnalyticsLogs,
+  getUserFeedback
 } = require('../db');
 const { generateSynthesizedData } = require('./seedService');
 
@@ -84,7 +85,8 @@ async function getAnalyticsOverview(dateRange = '30d') {
     chatbotLogs,
     classLogs,
     activityLogs,
-    systemLogs
+    systemLogs,
+    userFeedbackDocs
   ] = await Promise.all([
     getUsers({}, 1000),
     getSearchHistory({}, 2000),
@@ -92,7 +94,8 @@ async function getAnalyticsOverview(dateRange = '30d') {
     getChatbotPerformance({}, 2000),
     getClassificationAnalytics({}, 2000),
     getUserActivity({}, 2000),
-    getAnalyticsLogs({}, 1000)
+    getAnalyticsLogs({}, 1000),
+    getUserFeedback({}, 2000)
   ]);
 
   const hasRealHistory = realHistory.length > 0;
@@ -690,10 +693,27 @@ async function getAnalyticsOverview(dateRange = '30d') {
     { name: 'Low (<60%)', value: hasRealHistory ? confidenceBuckets.low : 4, color: '#ef4444' }
   ];
 
+  if (userFeedbackDocs && userFeedbackDocs.length > 0) {
+    positiveFeedbackCount = 0;
+    negativeFeedbackCount = 0;
+    neutralFeedbackCount = 0;
+    userFeedbackDocs.forEach(fb => {
+      const type = String(fb.feedback_type || '').toLowerCase();
+      const r = parseInt(fb.rating, 10);
+      if (type === 'like' || type === 'positive' || r >= 4) {
+        positiveFeedbackCount++;
+      } else if (type === 'dislike' || type === 'negative' || r === 1 || r === 2) {
+        negativeFeedbackCount++;
+      } else {
+        neutralFeedbackCount++;
+      }
+    });
+  }
+
   const feedbackChart = [
-    { name: 'Positive (Likes)', value: positiveFeedbackCount || 18, color: '#10b981' },
-    { name: 'Neutral', value: neutralFeedbackCount || 4, color: '#6b7280' },
-    { name: 'Negative (Dislikes)', value: negativeFeedbackCount || 1, color: '#ef4444' }
+    { name: 'Positive (Likes)', value: positiveFeedbackCount, color: '#10b981' },
+    { name: 'Neutral', value: neutralFeedbackCount, color: '#6b7280' },
+    { name: 'Negative (Dislikes)', value: negativeFeedbackCount, color: '#ef4444' }
   ];
 
   const deviceChart = Object.keys(browserCounts).length > 0

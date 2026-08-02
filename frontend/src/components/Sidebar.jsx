@@ -32,6 +32,7 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
 
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'feedback', label: 'User Feedback Analytics', icon: Star },
     { id: 'chatbot_logs', label: 'Chatbot Performance', icon: Bot },
     { id: 'classification_logs', label: 'Image Classification', icon: Camera },
     { id: 'activity_logs', label: 'User Activity Feed', icon: Activity },

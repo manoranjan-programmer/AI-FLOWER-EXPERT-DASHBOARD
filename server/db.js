@@ -141,6 +141,25 @@ async function logAnalyticsEvent(eventData) {
   }
 }
 
+async function getUserFeedback(query = {}, limit = 2000) {
+  try {
+    const database = await connectDB();
+    if (!database) return [];
+    const collName = process.env.MONGO_FEEDBACK_COLLECTION || 'User_Feedback';
+    let coll = database.collection(collName);
+    let count = await coll.countDocuments(query).catch(() => 0);
+    if (count === 0 && collName !== 'Chatbot_Feedback') {
+      const fallbackColl = database.collection('Chatbot_Feedback');
+      const fallbackCount = await fallbackColl.countDocuments(query).catch(() => 0);
+      if (fallbackCount > 0) coll = fallbackColl;
+    }
+    return await coll.find(query).sort({ _id: -1 }).limit(limit).toArray();
+  } catch (err) {
+    console.error('Error fetching user feedback:', err.message);
+    return [];
+  }
+}
+
 module.exports = {
   connectDB,
   getCollection,
@@ -151,6 +170,7 @@ module.exports = {
   getClassificationAnalytics,
   getUserActivity,
   getAnalyticsLogs,
+  getUserFeedback,
   logAnalyticsEvent
 };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { loginAdmin } from '../services/api';
 import logo from '../assets/logo.png';
@@ -52,16 +52,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Demo Notice Banner */}
-          <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-900 space-y-1">
-            <div className="font-semibold flex items-center gap-1.5 text-blue-700">
-              <Sparkles className="w-4 h-4 text-blue-600" /> Default Demo Credentials
-            </div>
-            <div className="text-[11px] font-mono text-blue-800">
-              Email: <span className="font-bold text-gray-900">admin@aflowerexpert.com</span><br/>
-              Password: <span className="font-bold text-gray-900">admin123</span>
-            </div>
-          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">

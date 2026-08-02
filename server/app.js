@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const { connectDB, logAnalyticsEvent } = require('./db');
 const { getAnalyticsOverview } = require('./services/analyticsService');
+const feedbackRouter = require('./api/feedbackRoutes');
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_admin_analytics_jwt_key_2026';
@@ -188,6 +189,9 @@ app.get(['/api/analytics/errors', '/analytics/errors'], verifyToken, async (req,
     res.status(500).json({ error: 'Failed to fetch error diagnostics data' });
   }
 });
+
+// Feedback Analytics API (Authenticated)
+app.use(['/api/feedback', '/feedback'], verifyToken, feedbackRouter);
 
 // Non-breaking Analytics Ingestion Route
 app.post(['/api/analytics/log', '/analytics/log'], async (req, res) => {

@@ -17,20 +17,18 @@ export default function FilterPanel({
   onResetFilters
 }) {
   const [category, setCategory] = useState('ALL');
-  const [region, setRegion] = useState('ALL');
   const [status, setStatus] = useState('ALL');
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(true);
 
   const handleApply = () => {
     if (onApplyFilters) {
-      onApplyFilters({ category, region, status, search, dateRange });
+      onApplyFilters({ category, status, search, dateRange });
     }
   };
 
   const handleReset = () => {
     setCategory('ALL');
-    setRegion('ALL');
     setStatus('ALL');
     setSearch('');
     setDateRange('30d');
@@ -56,7 +54,7 @@ export default function FilterPanel({
 
       {isOpen && (
         <div className="pt-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
             {/* Search Input */}
             <div className="space-y-1">
@@ -107,25 +105,6 @@ export default function FilterPanel({
                 <option value="chat">Botanical Chat</option>
                 <option value="knowledge">Knowledge Base</option>
                 <option value="logs">System API Logs</option>
-              </select>
-            </div>
-
-            {/* Region Filter */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                <Globe className="w-3 h-3 text-violet-600" /> Region
-              </label>
-              <select
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                className="w-full py-2 px-3 text-xs rounded-xl bg-gray-50 text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium"
-              >
-                <option value="ALL">All Regions</option>
-                <option value="US-East">United States (US-East)</option>
-                <option value="EU-Central">Germany (EU-Central)</option>
-                <option value="IN-South">India (IN-South)</option>
-                <option value="AP-Northeast">Japan (AP-Northeast)</option>
-                <option value="CA-Central">Canada (CA-Central)</option>
               </select>
             </div>
 
