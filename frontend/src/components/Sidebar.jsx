@@ -1,24 +1,27 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
+import {
+  LayoutDashboard,
   Users,
-  BarChart3, 
-  BookOpen, 
-  MessageSquare, 
-  ImageIcon, 
-  History, 
-  Search, 
-  Star, 
-  AlertCircle, 
-  LogOut, 
-  Flower2, 
-  ChevronLeft, 
+  BarChart3,
+  BookOpen,
+  MessageSquare,
+  ImageIcon,
+  History,
+  Search,
+  Star,
+  AlertCircle,
+  LogOut,
+  Flower2,
+  ChevronLeft,
   ChevronRight,
   ShieldCheck,
   BrainCircuit,
   Settings,
   HelpCircle,
-  FileText
+  FileText,
+  Bot,
+  Camera,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
@@ -29,27 +32,25 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
 
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'chatbot_logs', label: 'Chatbot Performance', icon: Bot },
+    { id: 'classification_logs', label: 'Image Classification', icon: Camera },
+    { id: 'activity_logs', label: 'User Activity Feed', icon: Activity },
     { id: 'users', label: 'User Leaderboard', icon: Users },
-    { id: 'prediction_feed', label: 'Recent Prediction Feed', icon: History },
-    { id: 'insights', label: 'AI Insights & Forecasts', icon: BrainCircuit },
-    { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
+    { id: 'prediction_feed', label: 'Recent Predictions Feed', icon: History },
     { id: 'charts', label: 'Analytics Charts', icon: BarChart3 },
-    { id: 'conversations', label: 'Recent Chats', icon: MessageSquare },
-    { id: 'uploads', label: 'Image Metadata', icon: ImageIcon },
-    { id: 'predictions', label: 'Predictions', icon: History },
-    { id: 'searches', label: 'Search History', icon: Search },
-    { id: 'feedback', label: 'User Feedback', icon: Star },
-    { id: 'logs', label: 'Error & API Logs', icon: AlertCircle },
-    { id: 'reports', label: 'Reports', icon: FileText },
+    { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
+    { id: 'insights', label: 'AI Insights & Forecasts', icon: BrainCircuit },
+    { id: 'conversations', label: 'Chat Transcripts', icon: MessageSquare },
+    { id: 'uploads', label: 'Uploaded Image Meta', icon: ImageIcon },
+    { id: 'error_logs', label: 'Error Diagnostics', icon: AlertCircle },
     { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'help', label: 'Help & Docs', icon: HelpCircle },
   ];
 
   return (
-    <aside className={`fixed top-0 left-0 bottom-0 z-40 flex flex-col transition-all duration-300 ${
-      collapsed ? 'w-20' : 'w-64'
-    } bg-white border-r border-gray-200 shadow-sm`}>
-      
+    <aside className={`fixed top-0 left-0 bottom-0 z-40 flex flex-col transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'
+      } bg-white border-r border-gray-200 shadow-sm`}>
+
       {/* Brand Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3 overflow-hidden">
@@ -64,7 +65,7 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
           )}
         </div>
 
-        <button 
+        <button
           onClick={() => setCollapsed(!collapsed)}
           className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -82,11 +83,10 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all duration-150 ${
-                isActive
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all duration-150 ${isActive
                   ? 'bg-blue-50 text-blue-600 border border-blue-200/80 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
+                }`}
 
               title={collapsed ? item.label : undefined}
             >
@@ -101,9 +101,9 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
       <div className="p-3 border-t border-gray-200 bg-gray-50 space-y-2">
         {!collapsed && (
           <div className="flex items-center gap-3 p-2 rounded-xl bg-white border border-gray-200 shadow-sm">
-            <img 
-              src={(user?.avatar && !user.avatar.includes('unsplash') && !user.avatar.includes('logo.png')) ? user.avatar : adminAvatar} 
-              alt="Avatar" 
+            <img
+              src={(user?.avatar && !user.avatar.includes('unsplash') && !user.avatar.includes('logo.png')) ? user.avatar : adminAvatar}
+              alt="Avatar"
               className="w-8 h-8 rounded-full ring-2 ring-blue-500/20 object-cover"
             />
             <div className="flex flex-col truncate">

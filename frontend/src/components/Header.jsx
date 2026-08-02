@@ -74,8 +74,8 @@ export default function Header({
         <button
           onClick={() => setAutoRefresh && setAutoRefresh(!autoRefresh)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${autoRefresh
-              ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm'
-              : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+            ? 'bg-blue-50 text-blue-600 border-blue-200 shadow-sm'
+            : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
             }`}
           title={autoRefresh ? 'Live auto-refresh enabled (5s)' : 'Enable live auto-refresh (5s)'}
         >

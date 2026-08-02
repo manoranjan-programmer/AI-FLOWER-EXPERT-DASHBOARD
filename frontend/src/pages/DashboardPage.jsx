@@ -13,23 +13,23 @@ import TablesSection from '../components/TablesSection';
 import SettingsPanel from '../components/SettingsPanel';
 import HelpDocsPanel from '../components/HelpDocsPanel';
 import { fetchAnalyticsOverview } from '../services/api';
-import { 
-  Sparkles, 
-  Layers, 
-  Users, 
-  History, 
-  Image as ImageIcon, 
-  MessageSquare, 
-  BarChart3, 
-  BookOpen, 
-  ShieldCheck, 
-  BrainCircuit, 
-  Calendar, 
-  Download, 
-  Share2, 
-  Settings, 
-  HelpCircle, 
-  FileText 
+import {
+  Sparkles,
+  Layers,
+  Users,
+  History,
+  Image as ImageIcon,
+  MessageSquare,
+  BarChart3,
+  BookOpen,
+  ShieldCheck,
+  BrainCircuit,
+  Calendar,
+  Download,
+  Share2,
+  Settings,
+  HelpCircle,
+  FileText
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -150,7 +150,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans flex transition-colors duration-300">
-      
+
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -160,10 +160,9 @@ export default function DashboardPage() {
       />
 
       {/* Main Content Workspace */}
-      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-        collapsed ? 'ml-20' : 'ml-64'
-      }`}>
-        
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${collapsed ? 'ml-20' : 'ml-64'
+        }`}>
+
         {/* Header Navbar */}
         <Header
           dateRange={dateRange}
@@ -195,13 +194,13 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2 relative z-10">
-              <button 
+              <button
                 onClick={() => window.print()}
                 className="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs transition-colors flex items-center gap-1.5 border border-gray-200"
               >
                 <Download className="w-4 h-4" /> Download PDF Report
               </button>
-              <button 
+              <button
                 onClick={() => navigator.clipboard && navigator.clipboard.writeText(window.location.href)}
                 className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm shadow-blue-500/20 transition-all flex items-center gap-1.5 btn-ripple"
               >
@@ -225,11 +224,10 @@ export default function DashboardPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${activeTab === tab.id
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.label}</span>
@@ -240,7 +238,7 @@ export default function DashboardPage() {
 
           {/* Interactive Multi-Dimensional Filter Bar */}
           {activeTab !== 'knowledge' && (
-            <FilterPanel 
+            <FilterPanel
               dateRange={dateRange}
               setDateRange={setDateRange}
               onApplyFilters={handleApplyFilters}
@@ -308,6 +306,36 @@ export default function DashboardPage() {
             </>
           )}
 
+          {/* Dedicated Analytics View Tabs */}
+          {activeTab === 'chatbot_logs' && (
+            <>
+              <ExecutiveKpiCards kpis={kpis} />
+              <TablesSection tablesData={tables} activeTab="chatbot_logs" />
+            </>
+          )}
+
+          {activeTab === 'classification_logs' && (
+            <>
+              <ExecutiveKpiCards kpis={kpis} />
+              <ImageGalleryInspector galleryItems={tables.galleryItems} />
+              <TablesSection tablesData={tables} activeTab="classification_logs" />
+            </>
+          )}
+
+          {activeTab === 'activity_logs' && (
+            <>
+              <ExecutiveKpiCards kpis={kpis} />
+              <TablesSection tablesData={tables} activeTab="activity_logs" />
+            </>
+          )}
+
+          {(activeTab === 'error_logs' || activeTab === 'logs') && (
+            <>
+              <ExecutiveKpiCards kpis={kpis} />
+              <TablesSection tablesData={tables} activeTab="error_logs" />
+            </>
+          )}
+
           {/* 8. CONVERSATIONS & RECENT CHATS TAB */}
           {activeTab === 'conversations' && (
             <TablesSection tablesData={tables} activeTab="conversations" />
@@ -321,11 +349,6 @@ export default function DashboardPage() {
           {/* 10. USER FEEDBACK TAB */}
           {activeTab === 'feedback' && (
             <TablesSection tablesData={tables} activeTab="feedback" />
-          )}
-
-          {/* 11. ERROR & API LOGS TAB */}
-          {activeTab === 'logs' && (
-            <TablesSection tablesData={tables} activeTab="logs" />
           )}
 
           {/* 12. REPORTS TAB */}
@@ -347,6 +370,7 @@ export default function DashboardPage() {
           )}
 
         </main>
+
 
       </div>
 

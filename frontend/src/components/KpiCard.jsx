@@ -33,11 +33,10 @@ export default function KpiCard({ title, value, change, isPositive = true, icon:
         </div>
 
         {change && (
-          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-            isPositive
+          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${isPositive
               ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20'
               : 'bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20'
-          }`}>
+            }`}>
             {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
             <span>{change}</span>
           </div>

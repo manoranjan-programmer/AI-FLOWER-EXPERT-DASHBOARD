@@ -6,22 +6,31 @@ const dbName = process.env.MONGO_DB || 'test';
 
 let client = null;
 let db = null;
+let connectPromise = null;
 
 async function connectDB() {
   if (db) return db;
-  try {
-    client = new MongoClient(mongoUri, {
-      serverSelectionTimeoutMS: 5000,
-    });
-    await client.connect();
-    db = client.db(dbName);
-    console.log(`Connected to MongoDB Atlas successfully [DB: ${dbName}]`);
-    return db;
-  } catch (err) {
-    console.error('Failed to connect to MongoDB:', err.message);
-    return null;
-  }
+  if (connectPromise) return connectPromise;
+
+  connectPromise = (async () => {
+    try {
+      client = new MongoClient(mongoUri, {
+        serverSelectionTimeoutMS: 10000,
+      });
+      await client.connect();
+      db = client.db(dbName);
+      console.log(`Connected to MongoDB Atlas successfully [DB: ${dbName}]`);
+      return db;
+    } catch (err) {
+      console.error('Failed to connect to MongoDB:', err.message);
+      connectPromise = null;
+      return null;
+    }
+  })();
+
+  return connectPromise;
 }
+
 
 function getCollection(collName) {
   if (!db) return null;
@@ -65,6 +74,55 @@ async function getFlowerKnowledge(query = {}, limit = 500) {
   }
 }
 
+// Read-only helpers for analytics collections
+async function getChatbotPerformance(query = {}, limit = 1000) {
+  try {
+    const database = await connectDB();
+    if (!database) return [];
+    const coll = database.collection(process.env.MONGO_CHATBOT_PERFORMANCE_COLLECTION || 'Chatbot_Performance_Analytics');
+    return await coll.find(query).sort({ _id: -1 }).limit(limit).toArray();
+  } catch (err) {
+    console.error('Error fetching chatbot performance analytics:', err.message);
+    return [];
+  }
+}
+
+async function getClassificationAnalytics(query = {}, limit = 1000) {
+  try {
+    const database = await connectDB();
+    if (!database) return [];
+    const coll = database.collection(process.env.MONGO_CLASSIFICATION_COLLECTION || 'Classification_Analytics');
+    return await coll.find(query).sort({ _id: -1 }).limit(limit).toArray();
+  } catch (err) {
+    console.error('Error fetching classification analytics:', err.message);
+    return [];
+  }
+}
+
+async function getUserActivity(query = {}, limit = 1000) {
+  try {
+    const database = await connectDB();
+    if (!database) return [];
+    const coll = database.collection(process.env.MONGO_USER_ACTIVITY_COLLECTION || 'User_Activity');
+    return await coll.find(query).sort({ _id: -1 }).limit(limit).toArray();
+  } catch (err) {
+    console.error('Error fetching user activity:', err.message);
+    return [];
+  }
+}
+
+async function getAnalyticsLogs(query = {}, limit = 1000) {
+  try {
+    const database = await connectDB();
+    if (!database) return [];
+    const coll = database.collection(process.env.MONGO_ANALYTICS_LOGS || 'Analytics_Logs');
+    return await coll.find(query).sort({ _id: -1 }).limit(limit).toArray();
+  } catch (err) {
+    console.error('Error fetching analytics logs:', err.message);
+    return [];
+  }
+}
+
 // Non-breaking logging for analytics logs
 async function logAnalyticsEvent(eventData) {
   try {
@@ -89,6 +147,11 @@ module.exports = {
   getUsers,
   getSearchHistory,
   getFlowerKnowledge,
+  getChatbotPerformance,
+  getClassificationAnalytics,
+  getUserActivity,
+  getAnalyticsLogs,
   logAnalyticsEvent
 };
+
 

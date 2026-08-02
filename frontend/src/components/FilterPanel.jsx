@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { 
-  Filter, 
-  Calendar, 
-  Globe, 
-  Tag, 
-  Search, 
-  RotateCcw, 
-  Check, 
-  SlidersHorizontal 
+import {
+  Filter,
+  Calendar,
+  Globe,
+  Tag,
+  Search,
+  RotateCcw,
+  Check,
+  SlidersHorizontal
 } from 'lucide-react';
 
-export default function FilterPanel({ 
-  dateRange, 
-  setDateRange, 
-  onApplyFilters, 
-  onResetFilters 
+export default function FilterPanel({
+  dateRange,
+  setDateRange,
+  onApplyFilters,
+  onResetFilters
 }) {
   const [category, setCategory] = useState('ALL');
   const [region, setRegion] = useState('ALL');
@@ -57,7 +57,7 @@ export default function FilterPanel({
       {isOpen && (
         <div className="pt-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            
+
             {/* Search Input */}
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">

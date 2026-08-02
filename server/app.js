@@ -94,6 +94,101 @@ app.get(['/api/analytics/overview', '/analytics/overview'], verifyToken, async (
   }
 });
 
+// Chatbot Analytics API (Authenticated)
+app.get(['/api/analytics/chatbot', '/analytics/chatbot'], verifyToken, async (req, res) => {
+  try {
+    const { range = '30d' } = req.query;
+    const data = await getAnalyticsOverview(range);
+    res.json({
+      kpis: {
+        totalChats: data.kpis.totalChats,
+        avgChatbotResponseTimeMs: data.kpis.avgChatbotResponseTimeMs,
+        positiveFeedbackRatio: data.kpis.positiveFeedbackRatio,
+        totalTokenUsage: data.kpis.totalTokenUsage
+      },
+      charts: {
+        usageTrends: data.charts.usageTrends,
+        feedbackDistribution: data.charts.feedbackDistribution,
+        modelDistribution: data.charts.modelDistribution
+      },
+      logs: data.tables.chatbotPerformanceLogs,
+      chatSessions: data.tables.chatSessions
+    });
+  } catch (err) {
+    console.error('Error fetching chatbot analytics:', err);
+    res.status(500).json({ error: 'Failed to fetch chatbot performance data' });
+  }
+});
+
+// Classification Analytics API (Authenticated)
+app.get(['/api/analytics/classification', '/analytics/classification'], verifyToken, async (req, res) => {
+  try {
+    const { range = '30d' } = req.query;
+    const data = await getAnalyticsOverview(range);
+    res.json({
+      kpis: {
+        totalFlowerIdentifications: data.kpis.totalFlowerIdentifications,
+        avgAccuracy: data.kpis.avgAccuracy,
+        avgClassificationTimeMs: data.kpis.avgClassificationTimeMs,
+        mostIdentifiedFlower: data.kpis.mostIdentifiedFlower
+      },
+      charts: {
+        topSpecies: data.charts.topSpecies,
+        confidenceDistribution: data.charts.confidenceDistribution,
+        familyDistribution: data.charts.familyDistribution,
+        deviceBreakdown: data.charts.deviceBreakdown
+      },
+      logs: data.tables.classificationLogs,
+      galleryItems: data.tables.galleryItems
+    });
+  } catch (err) {
+    console.error('Error fetching classification analytics:', err);
+    res.status(500).json({ error: 'Failed to fetch classification analytics data' });
+  }
+});
+
+// User Activity API (Authenticated)
+app.get(['/api/analytics/activity', '/analytics/activity'], verifyToken, async (req, res) => {
+  try {
+    const { range = '30d' } = req.query;
+    const data = await getAnalyticsOverview(range);
+    res.json({
+      kpis: {
+        totalRegisteredUsers: data.kpis.totalRegisteredUsers,
+        activeUsersToday: data.kpis.activeUsersToday,
+        activeBotanistsToday: data.kpis.activeBotanistsToday
+      },
+      charts: {
+        deviceBreakdown: data.charts.deviceBreakdown,
+        usageTrends: data.charts.usageTrends
+      },
+      users: data.tables.registeredUsers,
+      activityLogs: data.tables.userActivityLogs
+    });
+  } catch (err) {
+    console.error('Error fetching user activity analytics:', err);
+    res.status(500).json({ error: 'Failed to fetch user activity data' });
+  }
+});
+
+// System & Error Diagnostics API (Authenticated)
+app.get(['/api/analytics/errors', '/analytics/errors'], verifyToken, async (req, res) => {
+  try {
+    const { range = '30d' } = req.query;
+    const data = await getAnalyticsOverview(range);
+    res.json({
+      kpis: {
+        errorRate: data.kpis.errorRate,
+        totalErrors: data.tables.errorLogs.length
+      },
+      errorLogs: data.tables.errorLogs
+    });
+  } catch (err) {
+    console.error('Error fetching error analytics:', err);
+    res.status(500).json({ error: 'Failed to fetch error diagnostics data' });
+  }
+});
+
 // Non-breaking Analytics Ingestion Route
 app.post(['/api/analytics/log', '/analytics/log'], async (req, res) => {
   try {
@@ -106,3 +201,4 @@ app.post(['/api/analytics/log', '/analytics/log'], async (req, res) => {
 });
 
 module.exports = app;
+

@@ -1,16 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Users, 
-  UserCheck, 
-  Search, 
-  Sparkles, 
-  Calendar, 
-  Clock, 
-  Shield, 
-  Award, 
-  Eye, 
-  Image as ImageIcon, 
-  MessageSquare, 
+import {
+  Users,
+  UserCheck,
+  Search,
+  Sparkles,
+  Calendar,
+  Clock,
+  Shield,
+  Award,
+  Eye,
+  Image as ImageIcon,
+  MessageSquare,
   ChevronRight,
   X,
   ExternalLink,
@@ -28,10 +28,10 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
   // Filtered users list
   const filteredUsers = useMemo(() => {
     return registeredUsers.filter(u => {
-      const matchQuery = !searchTerm || 
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      const matchQuery = !searchTerm ||
+        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchEmail = selectedUserEmail === 'ALL' || u.email === selectedUserEmail;
 
       return matchQuery && matchEmail;
@@ -74,7 +74,7 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
 
       {/* Main Glassmorphism Leaderboard Container */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
-        
+
         {/* Header & Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -91,7 +91,7 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
 
           {/* User Filter Dropdown & Search Bar */}
           <div className="flex flex-wrap items-center gap-3">
-            
+
             {/* Search Input */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -153,24 +153,22 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
                   const isSelected = activeInspectedUser?.email === user.email;
 
                   return (
-                    <tr 
+                    <tr
                       key={user.id || user.email}
-                      className={`hover:bg-blue-50/50 transition-colors ${
-                        isSelected ? 'bg-blue-50/70 font-semibold' : ''
-                      }`}
+                      className={`hover:bg-blue-50/50 transition-colors ${isSelected ? 'bg-blue-50/70 font-semibold' : ''
+                        }`}
                     >
                       {/* User Info */}
                       <td className="py-3.5 px-4 flex items-center gap-3">
                         {user.picture ? (
-                          <img 
-                            src={user.picture} 
-                            alt={user.name} 
+                          <img
+                            src={user.picture}
+                            alt={user.name}
                             className="w-9 h-9 rounded-full border border-gray-200 object-cover shadow-xs"
                           />
                         ) : (
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-white shadow-xs ${
-                            isBotanist ? 'bg-gradient-to-br from-emerald-500 to-teal-700' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
-                          }`}>
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-white shadow-xs ${isBotanist ? 'bg-gradient-to-br from-emerald-500 to-teal-700' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                            }`}>
                             {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                           </div>
                         )}
@@ -185,11 +183,10 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
 
                       {/* Role Badge */}
                       <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border tracking-wider flex items-center gap-1 w-max ${
-                          isBotanist 
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border tracking-wider flex items-center gap-1 w-max ${isBotanist
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : 'bg-blue-50 text-blue-700 border-blue-200'
-                        }`}>
+                          }`}>
                           <Shield className="w-3 h-3" />
                           {user.role || 'user'}
                         </span>
@@ -252,14 +249,14 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
       {/* Per-User Detailed History & Image Inspector Panel */}
       {activeInspectedUser && (
         <div className="bg-white rounded-2xl border border-blue-200 shadow-md p-6 space-y-6 animate-in fade-in duration-200">
-          
+
           {/* User Header Profile Card */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-100">
             <div className="flex items-center gap-4">
               {activeInspectedUser.picture ? (
-                <img 
-                  src={activeInspectedUser.picture} 
-                  alt={activeInspectedUser.name} 
+                <img
+                  src={activeInspectedUser.picture}
+                  alt={activeInspectedUser.name}
                   className="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover"
                 />
               ) : (
@@ -306,7 +303,7 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
             {activeInspectedUser.searches && activeInspectedUser.searches.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {activeInspectedUser.searches.map((item, idx) => (
-                  <div 
+                  <div
                     key={item.id || idx}
                     className="p-4 rounded-xl border border-gray-200 bg-gray-50/60 hover:bg-white hover:shadow-md transition-all space-y-3 flex flex-col justify-between"
                   >
@@ -314,9 +311,9 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         {item.image_preview ? (
-                          <img 
-                            src={item.image_preview} 
-                            alt={item.flower} 
+                          <img
+                            src={item.image_preview}
+                            alt={item.flower}
                             onClick={() => setViewingImage(item.image_preview)}
                             className="w-14 h-14 rounded-xl object-cover border border-gray-300 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
                           />
@@ -333,13 +330,12 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
                         </div>
                       </div>
 
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${
-                        item.confidence >= 90 
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                          : item.confidence >= 80 
-                          ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${item.confidence >= 90
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : item.confidence >= 80
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
                         {item.confidence}%
                       </span>
                     </div>
@@ -387,7 +383,7 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
                             <ImageIcon className="w-3.5 h-3.5" /> View Image
                           </button>
                         )}
-                        
+
                         {item.messages && item.messages.length > 0 && (
                           <button
                             onClick={() => setViewingTranscript({
@@ -421,20 +417,20 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
 
       {/* Lightbox Image Preview Modal */}
       {viewingImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setViewingImage(null)}
         >
           <div className="relative max-w-3xl max-h-[85vh] bg-white rounded-2xl p-2 border border-gray-200 shadow-2xl overflow-hidden">
-            <button 
+            <button
               onClick={() => setViewingImage(null)}
               className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/60 text-white hover:bg-black transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-            <img 
-              src={viewingImage} 
-              alt="Uploaded Flower Preview" 
+            <img
+              src={viewingImage}
+              alt="Uploaded Flower Preview"
               className="max-h-[80vh] w-auto rounded-xl object-contain mx-auto"
             />
           </div>

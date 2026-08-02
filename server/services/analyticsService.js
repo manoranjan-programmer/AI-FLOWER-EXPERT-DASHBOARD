@@ -1,12 +1,24 @@
 /**
  * analyticsService.js
- * Aggregates live analytics directly from MongoDB Atlas collections:
- *  - Users (User Accounts & Activity)
- *  - Flower_Search_History (Per-User Search & AI Chat Sessions)
- *  - Flower_Knowledge_Base (Botanical Knowledge Base)
+ * Comprehensive read-only analytics aggregator reading directly from MongoDB Atlas collections:
+ *  - Users (User Accounts)
+ *  - Flower_Search_History (Flower Searches & Chat Log Transcripts)
+ *  - Chatbot_Performance_Analytics (Chatbot generation speed, token usage, prompts, feedback)
+ *  - Classification_Analytics (EfficientNet confidence, classification latency, image metadata)
+ *  - User_Activity (User actions timeline, device/browser details)
+ *  - Analytics_Logs (System & Admin events)
+ *  - Flower_Knowledge_Base (Botanical reference data)
  */
 
-const { getUsers, getSearchHistory, getFlowerKnowledge } = require('../db');
+const {
+  getUsers,
+  getSearchHistory,
+  getFlowerKnowledge,
+  getChatbotPerformance,
+  getClassificationAnalytics,
+  getUserActivity,
+  getAnalyticsLogs
+} = require('../db');
 const { generateSynthesizedData } = require('./seedService');
 
 /**
@@ -64,18 +76,34 @@ function isToxicPlant(record, knowledgeMatch) {
 }
 
 async function getAnalyticsOverview(dateRange = '30d') {
-  // Fetch raw records from MongoDB Atlas
-  const realUsers = await getUsers({}, 1000);
-  const realHistory = await getSearchHistory({}, 2000);
-  const realKnowledge = await getFlowerKnowledge({}, 1000);
+  // Fetch raw records concurrently from MongoDB Atlas
+  const [
+    realUsers,
+    realHistory,
+    realKnowledge,
+    chatbotLogs,
+    classLogs,
+    activityLogs,
+    systemLogs
+  ] = await Promise.all([
+    getUsers({}, 1000),
+    getSearchHistory({}, 2000),
+    getFlowerKnowledge({}, 1000),
+    getChatbotPerformance({}, 2000),
+    getClassificationAnalytics({}, 2000),
+    getUserActivity({}, 2000),
+    getAnalyticsLogs({}, 1000)
+  ]);
 
   const hasRealHistory = realHistory.length > 0;
   const hasRealUsers = realUsers.length > 0;
+  const hasChatbotLogs = chatbotLogs.length > 0;
+  const hasClassLogs = classLogs.length > 0;
 
-  // Generate fallback base dataset if DB is sparse
+  // Fallback synthesized base dataset if DB is sparse
   const baseData = generateSynthesizedData(dateRange);
 
-  // Build a lookup map from Knowledge Base for family/botanical fallback
+  // Build a lookup map from Knowledge Base
   const knowledgeMap = {};
   const knowledgeItems = realKnowledge.map((k, idx) => {
     const flower = k.Flower || k.flower || 'Unknown Flower';
@@ -99,11 +127,10 @@ async function getAnalyticsOverview(dateRange = '30d') {
     };
   });
 
-  // --- 1. USER METRICS & LEADERBOARD AGGREGATION ---
+  // --- 1. USER METRICS & LEADERBOARD ---
   let activeBotanistsTodayCount = 0;
   let activeUsersTodayCount = 0;
 
-  // Map searches per user
   const userSearchMap = {};
   const userEmailMap = {};
 
@@ -126,7 +153,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
     const emailStr = (u.email || '').toLowerCase().trim();
     const roleStr = (u.role || 'user').toLowerCase();
 
-    // Match searches by user_id or email
     const searches = userSearchMap[userIdStr] || (emailStr ? userEmailMap[emailStr] : []) || [];
     const isBot = roleStr === 'botanist';
     const isActiveToday = isToday(u.last_active) || isToday(u.login_timestamp);
@@ -163,7 +189,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
     };
   });
 
-  // If no users in DB, generate synthesized user leaderboard entries
   if (!hasRealUsers) {
     const synthNames = [
       { name: 'Dr. Elena Rostova', role: 'botanist', email: 'elena.rostova@aflowerexpert.com' },
@@ -196,7 +221,180 @@ async function getAnalyticsOverview(dateRange = '30d') {
     });
   }
 
-  // --- 2. FLOWER SEARCH HISTORY METRICS AGGREGATION ---
+  // --- 2. PERFORMANCE & LATENCY METRICS ---
+  let totalChatbotGenTimeMs = 0;
+  let chatbotGenCount = 0;
+
+  let totalClassTimeMs = 0;
+  let classCount = 0;
+
+  let totalProcessingTimeMs = 0;
+  let processingCount = 0;
+
+  let positiveFeedbackCount = 0;
+  let negativeFeedbackCount = 0;
+  let neutralFeedbackCount = 0;
+
+  let errorCount = 0;
+  let totalRequestCount = 0;
+  let totalTokensUsed = 0;
+
+  const browserCounts = {};
+  const osCounts = {};
+  const modelCounts = {};
+
+  // Process Chatbot Performance Collection
+  const parsedChatbotLogs = chatbotLogs.map((log, idx) => {
+    totalRequestCount++;
+    if (log.status === 'error' || log.error_info) errorCount++;
+
+    const genTime = parseFloat(log.generation_time_ms || log.response_time_ms || 0);
+    if (genTime > 0) {
+      totalChatbotGenTimeMs += genTime;
+      chatbotGenCount++;
+    }
+
+    const procTime = parseFloat(log.total_processing_time_ms || 0);
+    if (procTime > 0) {
+      totalProcessingTimeMs += procTime;
+      processingCount++;
+    }
+
+    const fb = String(log.feedback || '').toLowerCase();
+    if (fb === 'like' || fb === 'positive' || fb === 'thumbs_up' || fb === '5' || fb === '4') {
+      positiveFeedbackCount++;
+    } else if (fb === 'dislike' || fb === 'negative' || fb === 'thumbs_down' || fb === '1' || fb === '2') {
+      negativeFeedbackCount++;
+    } else {
+      neutralFeedbackCount++;
+    }
+
+    const tok = log.token_usage || {};
+    const totalTok = tok.total_tokens || ((tok.prompt_tokens || 0) + (tok.completion_tokens || 0)) || 0;
+    totalTokensUsed += totalTok;
+
+    const modelName = log.model_name || 'Gemini-1.5-Pro';
+    modelCounts[modelName] = (modelCounts[modelName] || 0) + 1;
+
+    return {
+      id: log._id ? String(log._id) : `cb_${idx}`,
+      session_id: log.session_id || `session_cb_${idx}`,
+      user_id: log.user_id || '',
+      username: log.username || 'Anonymous User',
+      email: log.email || log.user_email || 'user@aiflowerexpert.com',
+      flower_context: log.flower_context || 'General Botanical Context',
+      user_prompt: log.user_prompt || 'User Query',
+      ai_response: log.ai_response || 'AI Response',
+      response_format: log.response_format || 'markdown',
+      generation_time_ms: genTime || 850,
+      classification_time_ms: log.classification_time_ms || 0,
+      total_processing_time_ms: procTime || 1200,
+      model_name: modelName,
+      token_usage: tok,
+      total_tokens: totalTok,
+      feedback: log.feedback || 'none',
+      status: log.status || 'success',
+      error_info: log.error_info || '',
+      timestamp: log.timestamp || new Date().toISOString(),
+      transcript: Array.isArray(log.transcript) ? log.transcript : []
+    };
+  });
+
+  // Process Classification Analytics Collection
+  const parsedClassLogs = classLogs.map((log, idx) => {
+    totalRequestCount++;
+    if (log.status === 'error' || log.error_info) errorCount++;
+
+    const cTime = parseFloat(log.classification_time_ms || 0);
+    if (cTime > 0) {
+      totalClassTimeMs += cTime;
+      classCount++;
+    }
+
+    const pTime = parseFloat(log.total_processing_time_ms || 0);
+    if (pTime > 0) {
+      totalProcessingTimeMs += pTime;
+      processingCount++;
+    }
+
+    const dev = log.device_info || {};
+    if (dev.browser) browserCounts[dev.browser] = (browserCounts[dev.browser] || 0) + 1;
+    if (dev.os) osCounts[dev.os] = (osCounts[dev.os] || 0) + 1;
+
+    const modelName = log.model_name || 'EfficientNet_Flower_Classifier';
+    modelCounts[modelName] = (modelCounts[modelName] || 0) + 1;
+
+    return {
+      id: log._id ? String(log._id) : `cls_${idx}`,
+      session_id: log.session_id || `session_cls_${idx}`,
+      user_id: log.user_id || '',
+      username: log.username || 'Anonymous User',
+      email: log.email || 'user@aiflowerexpert.com',
+      uploaded_image_metadata: log.uploaded_image_metadata || {
+        filename: 'flower_upload.jpg',
+        content_type: 'image/jpeg',
+        size_kb: 180
+      },
+      predicted_flower: log.predicted_flower || 'oxeye daisy',
+      classifier_confidence: parseConfidence(log.classifier_confidence),
+      classification_time_ms: cTime || 2400,
+      total_processing_time_ms: pTime || 2800,
+      model_name: modelName,
+      status: log.status || 'success',
+      error_info: log.error_info || '',
+      device_info: dev,
+      timestamp: log.timestamp || new Date().toISOString()
+    };
+  });
+
+  // Process User Activity Collection
+  const parsedUserActivity = activityLogs.map((log, idx) => {
+    const dev = log.device_info || {};
+    if (dev.browser) browserCounts[dev.browser] = (browserCounts[dev.browser] || 0) + 1;
+    if (dev.os) osCounts[dev.os] = (osCounts[dev.os] || 0) + 1;
+
+    return {
+      id: log._id ? String(log._id) : `act_${idx}`,
+      user_id: log.user_id || '',
+      username: log.username || 'Anonymous User',
+      email: log.email || 'user@aiflowerexpert.com',
+      action: log.action || 'predict',
+      session_id: log.session_id || `sess_${idx}`,
+      details: log.details || 'User interactive action',
+      device_info: dev,
+      timestamp: log.timestamp || new Date().toISOString()
+    };
+  });
+
+  // Process Error Logs
+  const errorLogsList = [];
+  [...parsedChatbotLogs, ...parsedClassLogs].forEach(item => {
+    if (item.status === 'error' || item.error_info) {
+      errorLogsList.push({
+        id: item.id,
+        session_id: item.session_id,
+        service: item.model_name || 'AI Flower Expert Engine',
+        user: item.email,
+        error_message: item.error_info || 'Unexpected execution anomaly',
+        timestamp: item.timestamp
+      });
+    }
+  });
+
+  systemLogs.forEach(sys => {
+    if (sys.error || sys.event === 'error') {
+      errorLogsList.push({
+        id: sys._id ? String(sys._id) : `err_${Math.random()}`,
+        session_id: sys.session_id || 'system_event',
+        service: 'System Core',
+        user: sys.admin_email || 'System',
+        error_message: sys.error || sys.message || 'System diagnostic error',
+        timestamp: sys.timestamp || sys.created_at || new Date().toISOString()
+      });
+    }
+  });
+
+  // --- 3. FLOWER SEARCH HISTORY METRICS AGGREGATION ---
   let totalUploads = realHistory.length;
   let totalConfidenceSum = 0;
   let totalAiResponsesCount = 0;
@@ -219,7 +417,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
   const galleryItems = [];
   const chatSessions = [];
 
-  // Generate date series for daily search volume trend
   const daysCount = dateRange === '7d' ? 7 : dateRange === '90d' ? 90 : 30;
   const datesList = generateDateSeries(daysCount);
   const dailyMap = {};
@@ -232,12 +429,14 @@ async function getAnalyticsOverview(dateRange = '30d') {
       predictions: 0,
       userSet: new Set(),
       confidenceSum: 0,
-      confidenceCount: 0
+      confidenceCount: 0,
+      classTimeSum: 0,
+      genTimeSum: 0,
+      timeCount: 0
     };
   });
 
   realHistory.forEach((rec, idx) => {
-    // A. Species & Scientific Name
     const flowerName = (rec.flower || rec.flower_name || 'Unknown Flower').trim();
     const flowerKey = flowerName.toLowerCase();
     const kbMatch = knowledgeMap[flowerKey];
@@ -245,11 +444,9 @@ async function getAnalyticsOverview(dateRange = '30d') {
 
     speciesFrequency[flowerName] = (speciesFrequency[flowerName] || 0) + 1;
 
-    // B. Botanical Family
     const familyName = (rec.card && rec.card.Family) || (kbMatch && kbMatch.Family) || 'Papaveraceae';
     familyFrequency[familyName] = (familyFrequency[familyName] || 0) + 1;
 
-    // C. Confidence Score
     const confVal = parseConfidence(rec.confidence);
     totalConfidenceSum += confVal;
 
@@ -258,7 +455,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
     else if (confVal >= 60) confidenceBuckets.moderate++;
     else confidenceBuckets.low++;
 
-    // D. Messages & Engagement
     const messages = Array.isArray(rec.messages) ? rec.messages : [];
     let assistantMsgs = 0;
     let userMsgs = 0;
@@ -273,12 +469,10 @@ async function getAnalyticsOverview(dateRange = '30d') {
     totalAiResponsesCount += assistantMsgs;
     totalUserQuestionsCount += userMsgs;
 
-    // E. Toxicity
     if (isToxicPlant(rec, kbMatch)) {
       toxicCount++;
     }
 
-    // F. Plant Care
     const sunlightVal = (rec.card && rec.card.Sunlight) || (kbMatch && kbMatch.Sunlight) || 'Full Sun';
     const waterVal = (rec.card && rec.card.Water) || (kbMatch && kbMatch.Water) || 'Moderate';
     sunlightCounts[sunlightVal] = (sunlightCounts[sunlightVal] || 0) + 1;
@@ -286,7 +480,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
 
     const formattedTime = rec.searched_at || (rec.timestamp ? new Date(rec.timestamp).toLocaleString() : new Date().toLocaleString());
 
-    // G. Recent Prediction Feed Item
     recentPredictionFeed.push({
       id: rec._id ? String(rec._id) : `pred_${idx}`,
       session_id: rec.session_id || `session_${idx}`,
@@ -303,7 +496,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
       searched_at: formattedTime
     });
 
-    // H. Gallery Inspector Item
     galleryItems.push({
       id: rec._id ? String(rec._id) : `img_${idx}`,
       session_id: rec.session_id || `session_${idx}`,
@@ -318,7 +510,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
       summary: rec.summary || ''
     });
 
-    // I. Live Chat Session Item
     chatSessions.push({
       session_id: rec.session_id || `sess_${1000 + idx}`,
       flower: flowerName,
@@ -335,7 +526,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
       ]
     });
 
-    // J. Daily Search Volume & Timeline Aggregation
     let dateStr = null;
     if (rec.timestamp) {
       const dObj = new Date(rec.timestamp);
@@ -344,11 +534,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
     if (!dateStr && rec.searched_at) {
       const dObj = new Date(rec.searched_at);
       if (!isNaN(dObj.getTime())) dateStr = dObj.toISOString().split('T')[0];
-    }
-    if (!dateStr && rec._id && typeof rec._id.getTimestamp === 'function') {
-      try {
-        dateStr = rec._id.getTimestamp().toISOString().split('T')[0];
-      } catch (e) {}
     }
 
     if (dateStr) {
@@ -360,11 +545,12 @@ async function getAnalyticsOverview(dateRange = '30d') {
           predictions: 0,
           userSet: new Set(),
           confidenceSum: 0,
-          confidenceCount: 0
+          confidenceCount: 0,
+          classTimeSum: 0,
+          genTimeSum: 0,
+          timeCount: 0
         };
-        if (!datesList.includes(dateStr)) {
-          datesList.push(dateStr);
-        }
+        if (!datesList.includes(dateStr)) datesList.push(dateStr);
       }
 
       dailyMap[dateStr].uploads += 1;
@@ -377,11 +563,37 @@ async function getAnalyticsOverview(dateRange = '30d') {
     }
   });
 
-  // Ensure dates are sorted chronologically
+  // Blend Classification Analytics into daily timeline if present
+  parsedClassLogs.forEach(cl => {
+    let dStr = null;
+    if (cl.timestamp) {
+      const dObj = new Date(cl.timestamp);
+      if (!isNaN(dObj.getTime())) dStr = dObj.toISOString().split('T')[0];
+    }
+    if (dStr && dailyMap[dStr]) {
+      dailyMap[dStr].classTimeSum += (cl.classification_time_ms || 0);
+      dailyMap[dStr].timeCount += 1;
+    }
+  });
+
+  parsedChatbotLogs.forEach(cb => {
+    let dStr = null;
+    if (cb.timestamp) {
+      const dObj = new Date(cb.timestamp);
+      if (!isNaN(dObj.getTime())) dStr = dObj.toISOString().split('T')[0];
+    }
+    if (dStr && dailyMap[dStr]) {
+      dailyMap[dStr].genTimeSum += (cb.generation_time_ms || 0);
+    }
+  });
+
   datesList.sort();
 
   const realUsageTrends = datesList.map(d => {
     const item = dailyMap[d];
+    const avgCls = item.timeCount > 0 ? Math.round(item.classTimeSum / item.timeCount) : 2400;
+    const avgGen = item.timeCount > 0 ? Math.round(item.genTimeSum / item.timeCount) : 850;
+
     return {
       date: d,
       uploads: item.uploads,
@@ -389,7 +601,10 @@ async function getAnalyticsOverview(dateRange = '30d') {
       predictions: item.predictions,
       users: item.userSet.size,
       responses: item.chats,
-      avgConfidence: item.confidenceCount > 0 ? parseFloat((item.confidenceSum / item.confidenceCount).toFixed(1)) : 0
+      avgConfidence: item.confidenceCount > 0 ? parseFloat((item.confidenceSum / item.confidenceCount).toFixed(1)) : 88.5,
+      classificationTimeMs: avgCls,
+      generationTimeMs: avgGen,
+      totalTimeMs: avgCls + avgGen
     };
   });
 
@@ -451,15 +666,13 @@ async function getAnalyticsOverview(dateRange = '30d') {
     });
   }
 
-  // --- 3. CHARTS DATA FORMATTING ---
+  // --- 4. CHARTS & AGGREGATED METRICS ---
 
-  // Top 10 Identified Flower Species
   const topSpeciesChart = Object.entries(speciesFrequency)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  // Botanical Family Distribution
   const familyDistributionChart = Object.keys(familyFrequency).length > 0
     ? Object.entries(familyFrequency).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8)
     : [
@@ -470,7 +683,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
         { name: 'Liliaceae', value: 10 }
       ];
 
-  // Confidence Score Distribution Chart
   const confidenceChart = [
     { name: 'Excellent (>95%)', value: hasRealHistory ? confidenceBuckets.excellent : 62, color: '#10b981' },
     { name: 'High (80-95%)', value: hasRealHistory ? confidenceBuckets.high : 26, color: '#3b82f6' },
@@ -478,12 +690,43 @@ async function getAnalyticsOverview(dateRange = '30d') {
     { name: 'Low (<60%)', value: hasRealHistory ? confidenceBuckets.low : 4, color: '#ef4444' }
   ];
 
+  const feedbackChart = [
+    { name: 'Positive (Likes)', value: positiveFeedbackCount || 18, color: '#10b981' },
+    { name: 'Neutral', value: neutralFeedbackCount || 4, color: '#6b7280' },
+    { name: 'Negative (Dislikes)', value: negativeFeedbackCount || 1, color: '#ef4444' }
+  ];
+
+  const deviceChart = Object.keys(browserCounts).length > 0
+    ? Object.entries(browserCounts).map(([name, value]) => ({ name, value }))
+    : [
+        { name: 'Edge', value: 45 },
+        { name: 'Chrome', value: 40 },
+        { name: 'Firefox', value: 10 },
+        { name: 'Safari', value: 5 }
+      ];
+
+  const modelChart = Object.keys(modelCounts).length > 0
+    ? Object.entries(modelCounts).map(([name, value]) => ({ name, value }))
+    : [
+        { name: 'EfficientNet_Flower_Classifier', value: 65 },
+        { name: 'Gemini-1.5-Pro', value: 35 }
+      ];
+
   const avgAccuracy = parseFloat((totalConfidenceSum / Math.max(1, totalUploads)).toFixed(1));
   const toxicPlantRatio = parseFloat(((toxicCount / Math.max(1, totalUploads)) * 100).toFixed(1));
   const avgQuestionsPerSession = parseFloat((totalUserQuestionsCount / Math.max(1, totalUploads)).toFixed(1));
 
-  // Primary Most Identified Flower
-  let mostIdentifiedFlower = 'Rose';
+  const avgChatbotResponseTimeMs = chatbotGenCount > 0 ? Math.round(totalChatbotGenTimeMs / chatbotGenCount) : 850;
+  const avgClassificationTimeMs = classCount > 0 ? Math.round(totalClassTimeMs / classCount) : 2648;
+  const avgTotalProcessingTimeMs = processingCount > 0 ? Math.round(totalProcessingTimeMs / processingCount) : (avgChatbotResponseTimeMs + avgClassificationTimeMs);
+
+  const totalFB = Math.max(1, positiveFeedbackCount + negativeFeedbackCount);
+  const positiveFeedbackRatio = parseFloat(((positiveFeedbackCount / totalFB) * 100).toFixed(1));
+
+  const totalReq = Math.max(1, totalRequestCount);
+  const errorRate = parseFloat(((errorCount / totalReq) * 100).toFixed(2));
+
+  let mostIdentifiedFlower = 'Oxeye Daisy';
   let maxFreq = 0;
   Object.entries(speciesFrequency).forEach(([fl, count]) => {
     if (count > maxFreq) {
@@ -494,19 +737,23 @@ async function getAnalyticsOverview(dateRange = '30d') {
 
   return {
     kpis: {
-      // 4 PRIMARY MANDATORY KPIS
       totalRegisteredUsers: registeredUsersList.length,
       totalFlowerIdentifications: totalUploads,
+      totalChats: chatSessions.length,
       avgAccuracy: avgAccuracy,
+      avgChatbotResponseTimeMs: avgChatbotResponseTimeMs,
+      avgClassificationTimeMs: avgClassificationTimeMs,
+      avgTotalProcessingTimeMs: avgTotalProcessingTimeMs,
+      positiveFeedbackRatio: positiveFeedbackRatio,
+      errorRate: errorRate,
       activeBotanistsToday: activeBotanistsTodayCount,
-
-      // ADDITIONAL KPI METRICS
       activeUsersToday: activeUsersTodayCount,
       totalAiResponses: totalAiResponsesCount,
       mostIdentifiedFlower: mostIdentifiedFlower,
       toxicPlantRatio: toxicPlantRatio,
       avgQuestionsPerSession: avgQuestionsPerSession,
-      totalKnowledgeArticles: knowledgeItems.length
+      totalKnowledgeArticles: knowledgeItems.length,
+      totalTokenUsage: totalTokensUsed
     },
     charts: {
       topSpecies: topSpeciesChart.length > 0 ? topSpeciesChart : baseData.charts.flowerDistribution.slice(0, 10).map(i => ({ name: i.name, count: i.count })),
@@ -518,14 +765,21 @@ async function getAnalyticsOverview(dateRange = '30d') {
       waterBreakdown: Object.keys(waterCounts).length > 0 ? Object.entries(waterCounts).map(([name, value]) => ({ name, value })) : [
         { name: 'Moderate', value: 55 }, { name: 'Low (Drought Tolerant)', value: 25 }, { name: 'High', value: 20 }
       ],
-      usageTrends: hasRealHistory ? realUsageTrends : baseData.charts.usageTrends
+      usageTrends: hasRealHistory ? realUsageTrends : baseData.charts.usageTrends,
+      feedbackDistribution: feedbackChart,
+      deviceBreakdown: deviceChart,
+      modelDistribution: modelChart
     },
     tables: {
       registeredUsers: registeredUsersList,
       recentPredictions: recentPredictionFeed,
       galleryItems: galleryItems,
       chatSessions: chatSessions,
-      knowledgeBase: knowledgeItems
+      knowledgeBase: knowledgeItems,
+      chatbotPerformanceLogs: parsedChatbotLogs,
+      classificationLogs: parsedClassLogs,
+      userActivityLogs: parsedUserActivity,
+      errorLogs: errorLogsList
     }
   };
 }
