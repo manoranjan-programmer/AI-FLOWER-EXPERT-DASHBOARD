@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  BookOpen, 
-  Sun, 
-  Droplets, 
-  X, 
-  Sparkles, 
-  ChevronLeft, 
+import {
+  BookOpen,
+  Sun,
+  Droplets,
+  X,
+  Sparkles,
+  ChevronLeft,
   ChevronRight,
   Info
 } from 'lucide-react';
@@ -24,7 +24,7 @@ export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -79,11 +79,10 @@ export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      item.toxicity?.toLowerCase().includes('toxic') && !item.toxicity?.toLowerCase().includes('non-toxic')
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${item.toxicity?.toLowerCase().includes('toxic') && !item.toxicity?.toLowerCase().includes('non-toxic')
                         ? 'bg-rose-50 text-rose-700 border-rose-200'
                         : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    }`}>
+                      }`}>
                       {item.toxicity}
                     </span>
                   </td>
@@ -139,7 +138,7 @@ export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
       {selectedRecord && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-white border border-gray-200 shadow-2xl overflow-hidden">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center gap-3">
@@ -166,7 +165,7 @@ export default function KnowledgeBaseInspector({ knowledgeBase = [] }) {
 
             {/* Modal Body */}
             <div className="flex-1 p-6 overflow-y-auto space-y-5 text-xs text-gray-700">
-              
+
               {/* Care & Traits Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200">
                 <div>

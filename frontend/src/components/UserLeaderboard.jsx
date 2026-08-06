@@ -184,8 +184,8 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
                       {/* Role Badge */}
                       <td className="py-3.5 px-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border tracking-wider flex items-center gap-1 w-max ${isBotanist
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-blue-50 text-blue-700 border-blue-200'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-blue-50 text-blue-700 border-blue-200'
                           }`}>
                           <Shield className="w-3 h-3" />
                           {user.role || 'user'}
@@ -331,10 +331,10 @@ export default function UserLeaderboard({ registeredUsers = [] }) {
                       </div>
 
                       <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${item.confidence >= 90
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : item.confidence >= 80
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : item.confidence >= 80
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
                         }`}>
                         {item.confidence}%
                       </span>

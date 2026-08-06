@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { Settings, Database, Server, Bell, Shield, Key, Save, Check } from 'lucide-react';
+import { Settings, Database, Server, Sun, Moon, Palette, Globe, Save, Check, Shield } from 'lucide-react';
+import { useTheme, CHART_PALETTES } from '../context/ThemeContext';
 
 export default function SettingsPanel() {
+  const { theme, setTheme, chartPalette, changePalette } = useTheme();
   const [saved, setSaved] = useState(false);
-  const [apiPort, setApiPort] = useState('5001');
+  const [language, setLanguage] = useState('en');
+  const [refreshInterval, setRefreshInterval] = useState('5');
   const [mongoDb, setMongoDb] = useState('test');
-  const [historyColl, setHistoryColl] = useState('Flower_Search_History');
-  const [knowledgeColl, setKnowledgeColl] = useState('Flower_Knowledge_Base');
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState('5');
-  const [emailAlerts, setEmailAlerts] = useState(true);
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -17,121 +16,137 @@ export default function SettingsPanel() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
-      
+    <div className="saas-card p-6 space-y-6">
+
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+      <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-blue-600" />
-            System & Dashboard Settings
+          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Settings className="w-5 h-5 text-blue-500" />
+            Dashboard & Platform Settings
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Configure backend API endpoints, MongoDB collection aliases, telemetry auto-sync intervals, and security keys.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Configure visual theme, chart color palettes, live refresh rates, language, and database connections.
           </p>
         </div>
 
         {saved && (
-          <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 flex items-center gap-1.5 animate-fade-in">
-            <Check className="w-4 h-4 text-emerald-600" /> Settings Saved
+          <span className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-500 text-xs font-bold border border-emerald-500/20 flex items-center gap-1.5 animate-fade-in">
+            <Check className="w-4 h-4" /> Preferences Saved
           </span>
         )}
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        
-        {/* MongoDB Connection Config */}
+
+        {/* Theme & Palette Customization */}
         <div className="space-y-3">
-          <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-            <Database className="w-4 h-4 text-blue-600" /> MongoDB Atlas Collection Settings
+          <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <Palette className="w-4 h-4 text-purple-500" /> Visual Theme & Chart Color Palette
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Target Database</label>
-              <input
-                type="text"
-                value={mongoDb}
-                onChange={(e) => setMongoDb(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-gray-50 text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono"
-              />
+
+            {/* Dark / Light Theme Toggle */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Interface Theme</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTheme('light')}
+                  className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all ${
+                    theme === 'light'
+                      ? 'bg-blue-500/10 text-blue-600 border-blue-500/40 shadow-sm'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <Sun className="w-4 h-4 text-amber-500" /> Light Mode
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTheme('dark')}
+                  className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold transition-all ${
+                    theme === 'dark'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/40 shadow-sm'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <Moon className="w-4 h-4 text-blue-400" /> Dark Mode
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">API Express Port</label>
-              <input
-                type="text"
-                value={apiPort}
-                onChange={(e) => setApiPort(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-gray-50 text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono"
-              />
+            {/* Chart Accent Palette Switcher */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Chart Color Theme</label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(CHART_PALETTES).map(([key, pal]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => changePalette(key)}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${
+                      chartPalette === key
+                        ? 'border-blue-500 text-slate-900 dark:text-white bg-blue-500/10'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800'
+                    }`}
+                  >
+                    <span>{pal.name}</span>
+                    <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: pal.primary }} />
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Search History Collection</label>
-              <input
-                type="text"
-                value={historyColl}
-                onChange={(e) => setHistoryColl(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-gray-50 text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Knowledge Base Collection</label>
-              <input
-                type="text"
-                value={knowledgeColl}
-                onChange={(e) => setKnowledgeColl(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-gray-50 text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono"
-              />
-            </div>
           </div>
         </div>
 
-        {/* Telemetry & Refresh Settings */}
-        <div className="space-y-3 pt-3 border-t border-gray-100">
-          <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-            <Server className="w-4 h-4 text-emerald-600" /> Auto-Sync & Telemetry Preferences
+        {/* Sync & Refresh Settings */}
+        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <Server className="w-4 h-4 text-emerald-500" /> Auto Refresh & Localization
           </h4>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Live Polling Interval (Seconds)</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Auto Refresh Frequency</label>
               <select
-                value={autoRefreshInterval}
-                onChange={(e) => setAutoRefreshInterval(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-gray-50 text-gray-900 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-medium"
+                value={refreshInterval}
+                onChange={(e) => setRefreshInterval(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 font-medium"
               >
                 <option value="5">5 Seconds (Real-time)</option>
                 <option value="10">10 Seconds</option>
                 <option value="30">30 Seconds</option>
-                <option value="60">1 Minute</option>
+                <option value="60">60 Seconds</option>
+                <option value="off">Off (Manual Refresh)</option>
               </select>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200 mt-5">
-              <div>
-                <span className="text-xs font-bold text-gray-900">System Alert Email Notifications</span>
-                <p className="text-[11px] text-gray-500">Receive alerts when toxicity ratio exceeds threshold</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={emailAlerts}
-                onChange={(e) => setEmailAlerts(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
-              />
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Platform Language</label>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 font-medium"
+              >
+                <option value="en">English (US)</option>
+                <option value="es">Spanish (Español)</option>
+                <option value="fr">French (Français)</option>
+                <option value="de">German (Deutsch)</option>
+                <option value="ja">Japanese (日本語)</option>
+              </select>
             </div>
           </div>
         </div>
 
         {/* Action Button */}
-        <div className="flex justify-end pt-3 border-t border-gray-100">
+        <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all btn-ripple"
+            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all"
           >
-            <Save className="w-4 h-4" /> Save Dashboard Configuration
+            <Save className="w-4 h-4" /> Save Dashboard Preferences
           </button>
         </div>
 

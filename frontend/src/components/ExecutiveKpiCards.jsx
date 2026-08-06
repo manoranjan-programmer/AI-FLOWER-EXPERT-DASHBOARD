@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  Users, 
-  UserCheck, 
-  MessageSquare, 
-  Sparkles, 
-  Upload, 
-  CheckCircle2, 
-  Clock, 
-  Zap, 
+import {
+  Users,
+  UserCheck,
+  MessageSquare,
+  Sparkles,
+  Upload,
+  CheckCircle2,
+  Clock,
+  Zap,
   Gauge
 } from 'lucide-react';
 import KpiCard from './KpiCard';

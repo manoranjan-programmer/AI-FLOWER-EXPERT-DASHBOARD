@@ -8,7 +8,7 @@ export default function ImageGalleryInspector({ galleryItems = [] }) {
 
   const filteredItems = useMemo(() => {
     return galleryItems.filter(item => {
-      const matchSearch = !searchTerm || 
+      const matchSearch = !searchTerm ||
         (item.flower && item.flower.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (item.scientific_name && item.scientific_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (item.filename && item.filename.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -31,7 +31,7 @@ export default function ImageGalleryInspector({ galleryItems = [] }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
-      
+
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

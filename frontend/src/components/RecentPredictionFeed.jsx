@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  Clock, 
-  User, 
-  Target, 
-  Eye, 
-  MessageSquare, 
-  Image as ImageIcon, 
-  X, 
+import {
+  Sparkles,
+  Clock,
+  User,
+  Target,
+  Eye,
+  MessageSquare,
+  Image as ImageIcon,
+  X,
   ChevronRight,
   ShieldCheck,
   CheckCircle2,
@@ -32,7 +32,7 @@ export default function RecentPredictionFeed({ predictions = [] }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
-      
+
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -64,26 +64,26 @@ export default function RecentPredictionFeed({ predictions = [] }) {
         {filteredPredictions.length > 0 ? (
           filteredPredictions.map((item, idx) => {
             const confVal = item.confidence || 90;
-            const confBadgeClass = confVal >= 90 
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-              : confVal >= 80 
-              ? 'bg-blue-50 text-blue-700 border-blue-200' 
-              : 'bg-amber-50 text-amber-700 border-amber-200';
+            const confBadgeClass = confVal >= 90
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : confVal >= 80
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-amber-50 text-amber-700 border-amber-200';
 
             return (
-              <div 
+              <div
                 key={item.id || item.session_id || idx}
                 className="saas-card p-4 rounded-2xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4"
               >
                 {/* Top Section: Thumbnail & Species details */}
                 <div className="space-y-3">
-                  
+
                   {/* Image Preview / Lightbox Trigger */}
                   <div className="relative aspect-video rounded-xl bg-gray-100 border border-gray-200 overflow-hidden group">
                     {item.image_preview ? (
-                      <img 
-                        src={item.image_preview} 
-                        alt={item.flower} 
+                      <img
+                        src={item.image_preview}
+                        alt={item.flower}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                         onClick={() => setSelectedImage(item.image_preview)}
                       />
@@ -103,7 +103,7 @@ export default function RecentPredictionFeed({ predictions = [] }) {
 
                     {/* Hover Zoom overlay */}
                     {item.image_preview && (
-                      <div 
+                      <div
                         onClick={() => setSelectedImage(item.image_preview)}
                         className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-white font-bold text-xs gap-1.5"
                       >
@@ -202,20 +202,20 @@ export default function RecentPredictionFeed({ predictions = [] }) {
 
       {/* Lightbox Image Preview Modal */}
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-3xl max-h-[85vh] bg-white rounded-2xl p-2 border border-gray-200 shadow-2xl overflow-hidden">
-            <button 
+            <button
               onClick={() => setSelectedImage(null)}
               className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/60 text-white hover:bg-black transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-            <img 
-              src={selectedImage} 
-              alt="Uploaded Flower" 
+            <img
+              src={selectedImage}
+              alt="Uploaded Flower"
               className="max-h-[80vh] w-auto rounded-xl object-contain mx-auto"
             />
           </div>

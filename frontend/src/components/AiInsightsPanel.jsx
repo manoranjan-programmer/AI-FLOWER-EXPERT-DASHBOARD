@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle2, 
-  LineChart, 
-  BrainCircuit, 
-  ChevronDown, 
-  ChevronUp, 
-  Lightbulb, 
+import {
+  Sparkles,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle2,
+  LineChart,
+  BrainCircuit,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
   Activity,
   Layers
 } from 'lucide-react';
@@ -63,7 +63,7 @@ export default function AiInsightsPanel({ kpis = {}, chartsData = {} }) {
 
         {/* Card 1: Executive Summary Report */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all hover:shadow-md">
-          <div 
+          <div
             onClick={() => toggleSection('summary')}
             className="p-5 flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-gray-50 transition-colors border-b border-gray-100"
           >
@@ -98,7 +98,7 @@ export default function AiInsightsPanel({ kpis = {}, chartsData = {} }) {
 
         {/* Card 2: Key Trends & Observations */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all hover:shadow-md">
-          <div 
+          <div
             onClick={() => toggleSection('trends')}
             className="p-5 flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-gray-50 transition-colors border-b border-gray-100"
           >
@@ -130,7 +130,7 @@ export default function AiInsightsPanel({ kpis = {}, chartsData = {} }) {
 
         {/* Card 3: Anomalies Detected */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all hover:shadow-md">
-          <div 
+          <div
             onClick={() => toggleSection('anomalies')}
             className="p-5 flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-gray-50 transition-colors border-b border-gray-100"
           >
@@ -164,7 +164,7 @@ export default function AiInsightsPanel({ kpis = {}, chartsData = {} }) {
 
         {/* Card 4: Strategic Recommendations */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all hover:shadow-md">
-          <div 
+          <div
             onClick={() => toggleSection('recommendations')}
             className="p-5 flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-gray-50 transition-colors border-b border-gray-100"
           >

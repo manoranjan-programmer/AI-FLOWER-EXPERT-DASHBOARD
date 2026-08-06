@@ -1,6 +1,6 @@
 /**
  * exporter.js
- * Utility functions for exporting tabular analytics data to CSV, Excel, and PDF formats.
+ * Utility functions for exporting tabular analytics data to CSV, Excel, PDF, and PNG formats.
  */
 
 import Papa from 'papaparse';
@@ -11,8 +11,7 @@ import 'jspdf-autotable';
 // Export as CSV
 export function exportToCSV(data, filename = 'analytics_report.csv') {
   if (!data || data.length === 0) return;
-  
-  // Format items (strip nested arrays/objects for CSV clarity)
+
   const cleanData = data.map(item => {
     const obj = {};
     Object.keys(item).forEach(key => {
@@ -61,15 +60,15 @@ export function exportToPDF(columns, data, title = 'Analytics Report', filename 
   if (!data || data.length === 0) return;
 
   const doc = new jsPDF('l', 'mm', 'a4');
-  
+
   // PDF Header
   doc.setFontSize(18);
-  doc.setTextColor(16, 185, 129); // Brand emerald
-  doc.text('AI Flower Expert - Admin Analytics', 14, 15);
+  doc.setTextColor(37, 99, 235); // Enterprise Blue
+  doc.text('AI Flower Expert Analytics Platform', 14, 15);
 
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(100, 116, 139);
-  doc.text(`${title} - Generated ${new Date().toLocaleString()}`, 14, 22);
+  doc.text(`${title} • Generated on ${new Date().toLocaleString()}`, 14, 22);
 
   // Table Body Rows
   const tableRows = data.map(row => columns.map(col => {
@@ -85,9 +84,14 @@ export function exportToPDF(columns, data, title = 'Analytics Report', filename 
     startY: 28,
     theme: 'grid',
     styles: { fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: [19, 27, 46], textColor: [255, 255, 255] },
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255] },
     alternateRowStyles: { fillColor: [248, 250, 252] }
   });
 
   doc.save(filename);
+}
+
+// Trigger Print / Export View
+export function exportDashboardSnapshot() {
+  window.print();
 }
