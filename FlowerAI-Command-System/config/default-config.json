@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://localhost:3000",
+  "baseUrl": "https://ai-flower-expert-dashboard.vercel.app",
   "apiBaseUrl": "http://localhost:5001/api",
   "environment": "development",
   "routes": {

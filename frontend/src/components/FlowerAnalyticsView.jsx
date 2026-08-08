@@ -148,11 +148,12 @@ export default function FlowerAnalyticsView({ data = {} }) {
           className="lg:col-span-1"
         >
           <DonutChartComponent
-            data={histogramBuckets.map(b => ({ name: b.range, value: b.count || 10 }))}
+            data={histogramBuckets.map(b => ({ name: b.range, value: b.count }))}
             dataKey="value"
             nameKey="name"
             height={280}
-            centerTitle="Total Bracket"
+            centerTitle="Total Scans"
+            centerValue={kpis.totalFlowerIdentifications || predictions.length}
           />
         </AnalyticsCard>
       </div>

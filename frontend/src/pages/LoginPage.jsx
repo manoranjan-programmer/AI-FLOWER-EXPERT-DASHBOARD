@@ -13,8 +13,8 @@ const FEATURES = [
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('admin@aflowerexpert.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('admin.ai@flowerexpert.com');
+  const [password, setPassword] = useState('Admin-ai@123');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -34,8 +34,8 @@ export default function LoginPage() {
   };
 
   const handleQuickFill = () => {
-    setEmail('admin@aflowerexpert.com');
-    setPassword('admin123');
+    setEmail('admin.ai@flowerexpert.com');
+    setPassword('Admin-ai@123');
   };
 
   return (
@@ -63,10 +63,8 @@ export default function LoginPage() {
 
           {/* Logo Badge */}
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-500 p-[2px] shadow-lg shadow-blue-500/15">
-              <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-                <Flower2 className="w-6 h-6 text-blue-600" />
-              </div>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-blue-800 p-[2px] shadow-lg shadow-blue-500/20 overflow-hidden">
+              <img src="/logo.png" alt="Flower AI Logo" className="w-full h-full object-cover rounded-[14px]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -160,10 +158,13 @@ export default function LoginPage() {
               {/* Card Header */}
               <div className="space-y-2 mb-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Admin Sign In</h2>
+                  <div className="flex items-center gap-2.5">
+                    <img src="/logo.png" alt="Logo" className="w-7 h-7 object-cover rounded-lg shadow-sm" />
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Admin Sign In</h2>
+                  </div>
                   <span className="flex h-2.5 w-2.5 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600" />
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium">Secure access to your analytics platform console</p>

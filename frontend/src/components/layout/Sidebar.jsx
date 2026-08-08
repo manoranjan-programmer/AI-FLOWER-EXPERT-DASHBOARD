@@ -54,8 +54,8 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
       {/* ── Brand Header ── */}
       <div className="h-16 flex items-center justify-between px-4 shrink-0 border-b border-slate-200 dark:border-slate-800/60">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white font-black text-lg shadow-glow-emerald shrink-0">
-            <Sparkles className="w-5 h-5 text-emerald-100" />
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-slate-900 border border-emerald-500/30 text-white font-black text-lg shadow-glow-emerald shrink-0 overflow-hidden">
+            <img src="/logo.png" alt="Flower Expert Logo" className="w-full h-full object-cover rounded-xl" />
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
@@ -111,27 +111,27 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 relative ${
                       isActive
-                        ? 'bg-emerald-500/10 dark:bg-slate-900/90 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 dark:border-emerald-500/20 shadow-sm'
+                        ? 'bg-blue-500/10 dark:bg-slate-900/90 text-blue-700 dark:text-blue-400 border border-blue-500/30 dark:border-blue-500/20 shadow-sm'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900/50'
                     }`}
                   >
-                    {/* Active Emerald Left Indicator */}
+                    {/* Active Dark Blue Left Indicator */}
                     {isActive && (
                       <motion.div
                         layoutId="activeIndicator"
-                        className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-emerald-500 dark:bg-emerald-400 rounded-r-full shadow-glow-emerald"
+                        className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-blue-600 dark:bg-blue-400 rounded-r-full shadow-glow-blue"
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                       />
                     )}
 
-                    <Icon className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isActive ? 'text-emerald-600 dark:text-emerald-400 scale-110' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isActive ? 'text-blue-600 dark:text-blue-400 scale-110' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
 
                     {!collapsed && (
                       <span className="truncate flex-1 text-left">{item.label}</span>
                     )}
 
                     {!collapsed && item.badge && (
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30">
                         {item.badge}
                       </span>
                     )}
@@ -162,8 +162,8 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, setCollaps
       {/* ── Footer / Logout ── */}
       <div className="p-3 border-t border-slate-200 dark:border-slate-800/60 bg-slate-100/70 dark:bg-slate-950/60 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-md">
-            {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+          <div className="w-9 h-9 rounded-full bg-slate-900 border border-blue-500/30 overflow-hidden shrink-0 shadow-md">
+            <img src="/admin-avatar.png" alt="System Admin Avatar" className="w-full h-full object-cover rounded-full" />
           </div>
 
           {!collapsed && (

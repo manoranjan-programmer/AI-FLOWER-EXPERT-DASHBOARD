@@ -47,7 +47,7 @@ export default function TopNav({
       <div className="flex items-center gap-3">
         {/* Updated Badge */}
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 text-[11px] font-mono text-slate-600 dark:text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
           <span>Updated {formatTime(lastUpdated)}</span>
         </div>
 
@@ -55,10 +55,10 @@ export default function TopNav({
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 border border-slate-200 dark:border-slate-800/80 transition-all disabled:opacity-50"
+          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-800/80 transition-all disabled:opacity-50"
           title="Refresh Data"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-500' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-500' : ''}`} />
         </button>
 
         {/* Auto Refresh Toggle */}
@@ -66,12 +66,12 @@ export default function TopNav({
           onClick={() => setAutoRefresh(!autoRefresh)}
           className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 ${
             autoRefresh
-              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+              ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
               : 'bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800/80 hover:text-slate-900'
           }`}
           title="Toggle Auto Refresh (5s)"
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${autoRefresh ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${autoRefresh ? 'bg-blue-500 animate-ping' : 'bg-slate-400'}`} />
           <span className="hidden sm:inline">Live 5s</span>
         </button>
 
@@ -126,10 +126,8 @@ export default function TopNav({
 
         {/* Profile Avatar Badge */}
         <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800/80">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 p-0.5 shadow-md">
-            <div className="w-full h-full bg-white dark:bg-slate-950 rounded-[10px] flex items-center justify-center font-bold text-xs text-emerald-600 dark:text-emerald-400">
-              EX
-            </div>
+          <div className="w-9 h-9 rounded-xl bg-slate-900 border border-emerald-500/30 p-0.5 shadow-md overflow-hidden shrink-0">
+            <img src="/logo.png" alt="Executive HQ Logo" className="w-full h-full object-cover rounded-lg" />
           </div>
           <div className="hidden lg:block text-left">
             <p className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">Executive HQ</p>

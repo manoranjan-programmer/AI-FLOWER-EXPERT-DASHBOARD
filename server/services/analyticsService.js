@@ -136,13 +136,44 @@ async function getAnalyticsOverview(dateRange = '30d') {
   const userSearchMap = {};
   const userEmailMap = {};
 
+  // --- DATE RANGE CUTOFF FILTERING ---
+  const nowMs = Date.now();
+  let msCutoff = 30 * 24 * 60 * 60 * 1000;
+  if (dateRange === '24h' || dateRange === '1d' || dateRange === 'today') {
+    msCutoff = 24 * 60 * 60 * 1000;
+  } else if (dateRange === 'yesterday') {
+    msCutoff = 48 * 60 * 60 * 1000;
+  } else if (dateRange === '7d' || dateRange === 'week') {
+    msCutoff = 7 * 24 * 60 * 60 * 1000;
+  } else if (dateRange === '30d' || dateRange === 'this_month' || dateRange === 'month') {
+    msCutoff = 30 * 24 * 60 * 60 * 1000;
+  } else if (dateRange === 'last_month' || dateRange === '60d') {
+    msCutoff = 60 * 24 * 60 * 60 * 1000;
+  } else if (dateRange === '90d' || dateRange === 'quarter') {
+    msCutoff = 90 * 24 * 60 * 60 * 1000;
+  } else if (dateRange === '12m' || dateRange === '365d' || dateRange === 'year') {
+    msCutoff = 365 * 24 * 60 * 60 * 1000;
+  } else if (dateRange === 'all' || dateRange === 'custom') {
+    msCutoff = 100 * 365 * 24 * 60 * 60 * 1000;
+  }
+  const cutoffTime = nowMs - msCutoff;
+
+  const filterByDate = (doc) => {
+    if (!doc) return false;
+    const ts = doc.timestamp || doc.searched_at || doc.created_at || doc.last_active;
+    if (!ts) return true;
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return true;
+    return d.getTime() >= cutoffTime;
+  };
+
   // Build combined history from Flower_Search_History and Chatbot_Feedback
-  const combinedHistory = [...realHistory];
+  const rawCombinedHistory = [...realHistory];
   if (userFeedbackDocs && userFeedbackDocs.length > 0) {
     userFeedbackDocs.forEach((fb, idx) => {
-      const existing = combinedHistory.find(h => h.session_id && h.session_id === fb.session_id);
+      const existing = rawCombinedHistory.find(h => h.session_id && h.session_id === fb.session_id);
       if (!existing) {
-        combinedHistory.push({
+        rawCombinedHistory.push({
           _id: fb._id,
           session_id: fb.session_id || `fb_sess_${idx}`,
           user_id: fb.user_id || '',
@@ -164,6 +195,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
     });
   }
 
+  const combinedHistory = rawCombinedHistory.filter(filterByDate);
   const hasRealHistory = combinedHistory.length > 0;
 
   combinedHistory.forEach(rec => {
@@ -451,7 +483,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
   const galleryItems = [];
   const chatSessions = [];
 
-  const daysCount = dateRange === '7d' ? 7 : dateRange === '90d' ? 90 : 30;
+  const daysCount = (dateRange === '24h' || dateRange === '1d') ? 1 : dateRange === '7d' ? 7 : dateRange === '90d' ? 90 : (dateRange === '12m' || dateRange === '365d') ? 365 : 30;
   const datesList = generateDateSeries(daysCount);
   const dailyMap = {};
 

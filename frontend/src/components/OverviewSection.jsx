@@ -33,8 +33,8 @@ export default function OverviewSection({ data = {}, onCardClick = null }) {
 
   const trendSeries = (charts.usageTrends || []).map(u => ({
     name: u.date || u.time || 'Day',
-    interactions: u.chats !== undefined ? u.chats : (u.uploads || 10),
-    identifications: u.predictions !== undefined ? u.predictions : (u.uploads || 10)
+    interactions: typeof u.chats === 'number' ? u.chats : (typeof u.uploads === 'number' ? u.uploads : 0),
+    identifications: typeof u.predictions === 'number' ? u.predictions : (typeof u.uploads === 'number' ? u.uploads : 0)
   }));
 
   const speciesDistribution = (charts.topSpecies || []).map(s => ({
@@ -44,7 +44,7 @@ export default function OverviewSection({ data = {}, onCardClick = null }) {
 
   const latencySeries = (charts.usageTrends || []).map(u => ({
     time: u.date ? u.date.substring(5) : (u.time || 'Day'),
-    latency: u.generationTimeMs || u.totalTimeMs || u.classificationTimeMs || 850,
+    latency: typeof u.generationTimeMs === 'number' ? u.generationTimeMs : (typeof u.classificationTimeMs === 'number' ? u.classificationTimeMs : 0),
     target: 500
   }));
 
@@ -125,7 +125,7 @@ export default function OverviewSection({ data = {}, onCardClick = null }) {
           change="+14.2%"
           changeType="positive"
           icon={MessageSquare}
-          sparklineColor="#6366f1"
+          sparklineColor="#3b82f6"
           sparklineData={[12, 19, 14, 25, 22, 30, 28, 42]}
           subtitle="MongoDB chat sessions & active conversations"
           onClick={() => onCardClick && onCardClick('Total Conversations', tables.chatSessions)}
@@ -136,7 +136,7 @@ export default function OverviewSection({ data = {}, onCardClick = null }) {
           change="+18.5%"
           changeType="positive"
           icon={Flower2}
-          sparklineColor="#22c55e"
+          sparklineColor="#10b981"
           sparklineData={[20, 28, 24, 38, 32, 45, 40, 56]}
           subtitle="EfficientNet vision classifier scans"
           onClick={() => onCardClick && onCardClick('Identifications', tables.recentPredictions)}
@@ -158,7 +158,7 @@ export default function OverviewSection({ data = {}, onCardClick = null }) {
           change="-5.4%"
           changeType="positive"
           icon={Zap}
-          sparklineColor="#06b6d4"
+          sparklineColor="#8b5cf6"
           sparklineData={[480, 460, 440, 450, 420, 410, 430, 400]}
           subtitle="Gemini model inference response time in ms"
           onClick={() => onCardClick && onCardClick('Avg Latency', tables.chatbotPerformanceLogs)}
@@ -176,8 +176,8 @@ export default function OverviewSection({ data = {}, onCardClick = null }) {
           <AreaChartComponent
             data={trendSeries}
             dataKeys={[
-              { key: 'interactions', name: 'Chat Interactions', color: '#6366f1' },
-              { key: 'identifications', name: 'Flower Scans', color: '#22c55e' }
+              { key: 'interactions', name: 'Chat Interactions', color: '#3b82f6' },
+              { key: 'identifications', name: 'Flower Scans', color: '#10b981' }
             ]}
             xAxisKey="name"
             height={280}
@@ -196,6 +196,7 @@ export default function OverviewSection({ data = {}, onCardClick = null }) {
             nameKey="name"
             height={280}
             centerTitle="Total Scans"
+            centerValue={totalIdentifications}
           />
         </AnalyticsCard>
       </div>

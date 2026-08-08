@@ -28,8 +28,8 @@ export default function AiPerformanceView({ data = {} }) {
 
   const latencySeries = (charts.usageTrends || []).map((u, i) => ({
     time: u.date || `Hour ${i + 1}`,
-    classification: u.classificationTimeMs || Math.round(avgInferenceTimeMs * (0.9 + (i % 4) * 0.05)),
-    chatbot: u.generationTimeMs || Math.round(avgChatbotTimeMs * (0.85 + (i % 3) * 0.1))
+    classification: typeof u.classificationTimeMs === 'number' ? u.classificationTimeMs : 0,
+    chatbot: typeof u.generationTimeMs === 'number' ? u.generationTimeMs : 0
   }));
 
   const tableColumns = [

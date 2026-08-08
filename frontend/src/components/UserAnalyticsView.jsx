@@ -23,11 +23,32 @@ export default function UserAnalyticsView({ data = {} }) {
     { name: 'New Registrations', value: newUsers },
   ];
 
-  const userGrowthData = (charts.usageTrends || []).map((u, i) => ({
-    date: u.date || `Day ${i + 1}`,
-    users: u.users || Math.round((totalUsers / Math.max(charts.usageTrends?.length || 1, 1)) * (i + 1)),
-    active: u.users ? Math.round(u.users * 0.6) : Math.round(activeToday * (0.7 + (i % 3) * 0.1))
-  }));
+  // Compute true cumulative registered user growth from MongoDB Atlas registeredUsers collection
+  const userGrowthData = (charts.usageTrends || []).map((u) => {
+    const dStr = u.date || '';
+    let cumulativeCount = 0;
+    if (registeredUsers.length > 0) {
+      cumulativeCount = registeredUsers.filter(usr => {
+        if (!usr.created_at) return true;
+        try {
+          const joinedDate = new Date(usr.created_at).toISOString().split('T')[0];
+          return joinedDate <= dStr;
+        } catch (e) {
+          return true;
+        }
+      }).length;
+    } else {
+      cumulativeCount = Math.min(3, totalUsers);
+    }
+
+    const activeCount = u.users ? Math.min(u.users, cumulativeCount) : (u.uploads || u.chats ? 1 : 0);
+
+    return {
+      date: dStr,
+      users: cumulativeCount,
+      active: activeCount
+    };
+  });
 
   const tableColumns = [
     {
@@ -131,7 +152,8 @@ export default function UserAnalyticsView({ data = {} }) {
             dataKey="value"
             nameKey="name"
             height={260}
-            centerTitle="Total Base"
+            centerTitle="Total Users"
+            centerValue={totalUsers}
             colors={['#22c55e', '#6366f1']}
           />
         </AnalyticsCard>

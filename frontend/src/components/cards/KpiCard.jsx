@@ -26,14 +26,14 @@ export default function KpiCard({
       whileHover={{ y: -3, transition: { duration: 0.2 } }}
       onClick={onClick}
       className={`group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900/70 backdrop-blur-md border border-slate-200/90 dark:border-slate-800/80 p-5 shadow-sm dark:shadow-card-dark transition-all duration-300 ${
-        onClick ? 'cursor-pointer hover:border-emerald-500/40 hover:shadow-glow-emerald' : ''
+        onClick ? 'cursor-pointer hover:border-blue-500/40 hover:shadow-md hover:shadow-blue-500/10' : ''
       }`}
     >
       {/* Top Row: Icon + Title + Tooltip */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
           {Icon && (
-            <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-500 transition-all">
+            <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-slate-800/80 border border-blue-500/20 text-blue-600 dark:text-blue-400 group-hover:text-blue-500 transition-all">
               <Icon className="w-4 h-4" />
             </div>
           )}

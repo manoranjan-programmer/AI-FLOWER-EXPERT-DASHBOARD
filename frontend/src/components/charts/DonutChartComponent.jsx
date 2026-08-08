@@ -8,7 +8,7 @@ import {
   Legend
 } from 'recharts';
 
-const DEFAULT_COLORS = ['#22c55e', '#6366f1', '#f59e0b', '#06b6d4', '#f43f5e', '#a855f7', '#34d399', '#84cc16'];
+const DEFAULT_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'];
 
 const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
@@ -19,7 +19,7 @@ const CustomTooltip = ({ active, payload }) => {
         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.color }} />
         <span className="font-bold text-slate-800 dark:text-slate-200">{data.name}</span>
       </div>
-      <p className="font-mono text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+      <p className="font-mono text-blue-600 dark:text-blue-400 font-bold text-sm">
         {typeof data.value === 'number' ? data.value.toLocaleString() : data.value}
         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal ml-1">
           ({((data.percent || 0) * 100).toFixed(1)}%)

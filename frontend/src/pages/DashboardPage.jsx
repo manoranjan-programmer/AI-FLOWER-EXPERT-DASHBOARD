@@ -154,7 +154,7 @@ export default function DashboardPage() {
   const filteredData = useMemo(() => {
     const isRealData = !!rawData;
     const dataObj = effectiveData;
-    const { status, search } = appliedFilters;
+    const { status, category, search } = appliedFilters;
     const q = (search || '').toLowerCase();
 
     let galleryItems = isRealData ? (dataObj.tables?.galleryItems || []) : (dataObj.tables?.galleryItems || DEFAULT_TELEMETRY.tables.galleryItems);
@@ -167,6 +167,7 @@ export default function DashboardPage() {
     let activityLogs = isRealData ? (dataObj.tables?.userActivityLogs || []) : (dataObj.tables?.userActivityLogs || DEFAULT_TELEMETRY.tables.userActivityLogs);
     let errorLogs = dataObj.tables?.errorLogs || [];
 
+    // 1. Text Search Filter across all tables
     if (q) {
       const f = (arr) => (arr || []).filter(i => JSON.stringify(i).toLowerCase().includes(q));
       galleryItems = f(galleryItems);
@@ -178,30 +179,117 @@ export default function DashboardPage() {
       classLogs = f(classLogs);
     }
 
+    // 2. Confidence Status Filter ("high" >= 90, "moderate" 70-89, "low" < 70)
     if (status && status !== 'ALL') {
-      if (status === 'high') recentPredictions = recentPredictions.filter(i => (parseFloat(i.confidence) || 0) >= 90);
-      if (status === 'moderate') recentPredictions = recentPredictions.filter(i => { const c = parseFloat(i.confidence) || 0; return c >= 70 && c < 90; });
-      if (status === 'low') recentPredictions = recentPredictions.filter(i => (parseFloat(i.confidence) || 0) < 70);
+      const st = String(status).toLowerCase();
+      const filterConf = (i) => {
+        const c = parseFloat(i.confidence || i.classifier_confidence) || 0;
+        if (st === 'high') return c >= 90;
+        if (st === 'moderate') return c >= 70 && c < 90;
+        if (st === 'low') return c < 70;
+        return true;
+      };
+      recentPredictions = recentPredictions.filter(filterConf);
+      chatSessions = chatSessions.filter(filterConf);
+      galleryItems = galleryItems.filter(filterConf);
+      classLogs = classLogs.filter(filterConf);
     }
 
+    // 3. Category Filter
+    if (category && category !== 'ALL') {
+      const cat = String(category).toLowerCase();
+      if (cat.includes('identification')) {
+        chatSessions = [];
+      } else if (cat.includes('conversation')) {
+        recentPredictions = [];
+      } else if (cat.includes('user')) {
+        recentPredictions = recentPredictions.filter(p => !!(p.user_email || p.user_id || p.user_name || p.user));
+        chatSessions = chatSessions.filter(c => !!(c.user || c.user_email || c.user_name || c.user_id));
+      } else if (cat.includes('error')) {
+        recentPredictions = recentPredictions.filter(p => p.status === 'error' || p.error_info);
+        chatSessions = chatSessions.filter(c => c.status === 'error' || c.error_info);
+      }
+    }
+
+    // 4. Dynamic KPI & Chart Re-aggregation
+    const hasFilters = !!(q || (status && status !== 'ALL') || (category && category !== 'ALL'));
+    let topSpecies = dataObj.charts?.topSpecies || [];
+    let confidenceDistribution = dataObj.charts?.confidenceDistribution || [];
+    let usageTrends = dataObj.charts?.usageTrends || [];
+
+    if (hasFilters) {
+      // Re-aggregate top species
+      const speciesCounts = {};
+      let highCount = 0;
+      let modCount = 0;
+      let lowCount = 0;
+
+      recentPredictions.forEach(p => {
+        const name = p.flower || p.flower_name || 'Unknown Species';
+        speciesCounts[name] = (speciesCounts[name] || 0) + 1;
+        const c = parseFloat(p.confidence) || 0;
+        if (c >= 90) highCount++;
+        else if (c >= 70) modCount++;
+        else lowCount++;
+      });
+
+      topSpecies = Object.entries(speciesCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      confidenceDistribution = [
+        { name: 'High (>=90%)', value: highCount },
+        { name: 'Moderate (70-89%)', value: modCount },
+        { name: 'Low (<70%)', value: lowCount }
+      ];
+
+      // Re-aggregate usage trends timeline
+      const dailyMap = {};
+      (usageTrends || []).forEach(u => {
+        const dKey = u.date || 'Day';
+        dailyMap[dKey] = { date: dKey, uploads: 0, predictions: 0, chats: 0, classificationTimeMs: u.classificationTimeMs || 0, generationTimeMs: u.generationTimeMs || 0 };
+      });
+
+      recentPredictions.forEach(p => {
+        let dKey = p.timestamp ? p.timestamp.substring(0, 10) : (p.searched_at ? p.searched_at.substring(0, 10) : null);
+        if (dKey && dailyMap[dKey]) {
+          dailyMap[dKey].uploads += 1;
+          dailyMap[dKey].predictions += 1;
+        } else if (dKey) {
+          dailyMap[dKey] = { date: dKey, uploads: 1, predictions: 1, chats: 0, classificationTimeMs: 0, generationTimeMs: 0 };
+        }
+      });
+
+      chatSessions.forEach(c => {
+        let dKey = c.timestamp ? c.timestamp.substring(0, 10) : null;
+        if (dKey && dailyMap[dKey]) {
+          dailyMap[dKey].chats += 1;
+        } else if (dKey) {
+          dailyMap[dKey] = { date: dKey, uploads: 0, predictions: 0, chats: 1, classificationTimeMs: 0, generationTimeMs: 0 };
+        }
+      });
+
+      usageTrends = Object.values(dailyMap).sort((a, b) => (a.date > b.date ? 1 : -1));
+    }
+
+    const avgConfidenceVal = recentPredictions.length > 0
+      ? parseFloat((recentPredictions.reduce((acc, p) => acc + (parseFloat(p.confidence) || 0), 0) / recentPredictions.length).toFixed(1))
+      : (dataObj.kpis?.avgAccuracy || 89.4);
+
     return {
-      kpis: isRealData ? {
+      kpis: {
         ...dataObj.kpis,
         totalChats: chatSessions.length,
         totalFlowerIdentifications: recentPredictions.length,
-        totalRegisteredUsers: registeredUsers.length
-      } : {
-        ...DEFAULT_TELEMETRY.kpis,
-        ...dataObj.kpis,
-        totalChats: chatSessions.length || DEFAULT_TELEMETRY.kpis.totalChats,
-        totalFlowerIdentifications: recentPredictions.length || DEFAULT_TELEMETRY.kpis.totalFlowerIdentifications,
-        totalRegisteredUsers: registeredUsers.length || DEFAULT_TELEMETRY.kpis.totalRegisteredUsers
+        totalRegisteredUsers: registeredUsers.length,
+        avgAccuracy: avgConfidenceVal
       },
-      charts: isRealData ? {
-        ...dataObj.charts
-      } : {
-        ...DEFAULT_TELEMETRY.charts,
-        ...dataObj.charts
+      charts: {
+        ...(dataObj.charts || {}),
+        usageTrends,
+        topSpecies,
+        confidenceDistribution
       },
       tables: {
         galleryItems,

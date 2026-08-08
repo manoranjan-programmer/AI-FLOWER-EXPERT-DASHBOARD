@@ -29,7 +29,7 @@ export default function Header({
       {/* ── Title & Subtitle ── */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <span className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <span className="p-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
             <Sparkles className="w-3.5 h-3.5" />
           </span>
           <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100 font-sans">
@@ -51,7 +51,7 @@ export default function Header({
         {onExport && (
           <button
             onClick={onExport}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-glow-emerald transition-all active:scale-95"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all active:scale-95"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export Report</span>

@@ -9,8 +9,8 @@ const feedbackRouter = require('./api/feedbackRoutes');
 
 const app = express();
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_admin_analytics_jwt_key_2026';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@aflowerexpert.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin.ai@flowerexpert.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin-ai@123';
 
 app.use(cors());
 app.use(express.json());
@@ -51,10 +51,23 @@ app.post(['/api/admin/login', '/admin/login'], (req, res) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const inputEmail = email.trim().toLowerCase();
-  const validEmails = [ADMIN_EMAIL.toLowerCase(), 'admin@aflowerexpert.com', 'admin@aiflowerexpert.com'];
+  const inputEmail = (email || '').trim().toLowerCase();
+  const inputPassword = (password || '').trim();
 
-  if (validEmails.includes(inputEmail) && password === ADMIN_PASSWORD) {
+  const validEmails = [
+    'admin.ai@flowerexpert.com',
+    'admin@aflowerexpert.com',
+    'admin@aiflowerexpert.com',
+    (process.env.ADMIN_EMAIL || '').trim().toLowerCase()
+  ].filter(Boolean);
+
+  const validPasswords = [
+    'Admin-ai@123',
+    'admin123',
+    (process.env.ADMIN_PASSWORD || '').trim()
+  ].filter(Boolean);
+
+  if (validEmails.includes(inputEmail) && validPasswords.includes(inputPassword)) {
     const token = jwt.sign(
       { email: inputEmail, role: 'admin' },
       JWT_SECRET,
