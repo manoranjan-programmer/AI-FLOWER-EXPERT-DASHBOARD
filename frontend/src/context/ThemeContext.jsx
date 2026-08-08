@@ -39,7 +39,7 @@ export const CHART_PALETTES = {
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('admin_dashboard_theme') || 'dark';
+    return localStorage.getItem('admin_dashboard_theme') || 'light';
   });
 
   const [chartPalette, setChartPalette] = useState(() => {

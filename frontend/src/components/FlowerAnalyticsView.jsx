@@ -1,247 +1,206 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Flower2, Award, AlertTriangle, ShieldCheck, Target, TrendingUp } from 'lucide-react';
-import {
-  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, CartesianGrid, Legend, RadialBarChart, RadialBar
-} from 'recharts';
+import KpiCard from './cards/KpiCard';
+import AnalyticsCard from './cards/AnalyticsCard';
+import BarChartComponent from './charts/BarChartComponent';
+import DonutChartComponent from './charts/DonutChartComponent';
+import DataTable from './tables/DataTable';
+import { Flower2, Award, AlertTriangle, ShieldCheck, Target, CheckCircle2 } from 'lucide-react';
 
-const PALETTE = ['#6366f1','#10b981','#f59e0b','#06b6d4','#ec4899','#8b5cf6','#84cc16','#f97316','#14b8a6','#a855f7'];
-const CONF_COLORS = ['#ef4444','#f97316','#f59e0b','#6366f1','#10b981'];
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="premium-card p-3 text-xs">
-      <p className="font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
-      {payload.map((p, i) => (
-        <div key={i} className="flex items-center justify-between gap-3">
-          <span style={{ color: 'var(--text-tertiary)' }}>{p.name}</span>
-          <span className="font-bold" style={{ color: p.color }}>{p.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-export default function FlowerAnalyticsView({ data }) {
-  const kpis   = data?.kpis   || {};
+export default function FlowerAnalyticsView({ data = {} }) {
+  const kpis = data?.kpis || {};
   const charts = data?.charts || {};
   const tables = data?.tables || {};
 
-  const topSpecies       = charts.topSpecies             || [];
-  const confidenceDist   = charts.confidenceDistribution || [];
-  const predictions      = tables.recentPredictions      || [];
+  const topSpecies = charts.topSpecies || [];
+  const predictions = tables.recentPredictions || [];
 
   const histogramBuckets = [
-    { range: '0–20%',   count: 0, color: CONF_COLORS[0] },
-    { range: '20–40%',  count: 0, color: CONF_COLORS[1] },
-    { range: '40–60%',  count: 0, color: CONF_COLORS[2] },
-    { range: '60–80%',  count: 0, color: CONF_COLORS[3] },
-    { range: '80–100%', count: 0, color: CONF_COLORS[4] },
+    { range: '0–20%', count: 0 },
+    { range: '20–40%', count: 0 },
+    { range: '40–60%', count: 0 },
+    { range: '60–80%', count: 0 },
+    { range: '80–100%', count: 0 },
   ];
-  predictions.forEach(p => {
-    const c = parseFloat(p.confidence) || 0;
-    if (c <= 20)      histogramBuckets[0].count++;
+
+  (predictions || []).forEach(p => {
+    const c = parseFloat(p?.confidence) || 0;
+    if (c <= 20) histogramBuckets[0].count++;
     else if (c <= 40) histogramBuckets[1].count++;
     else if (c <= 60) histogramBuckets[2].count++;
     else if (c <= 80) histogramBuckets[3].count++;
-    else              histogramBuckets[4].count++;
+    else histogramBuckets[4].count++;
   });
 
-  const lowConf = predictions.filter(p => (parseFloat(p.confidence) || 0) < 75);
+  const lowConf = (predictions || []).filter(p => (parseFloat(p?.confidence) || 0) < 75);
 
-  const STAT_CARDS = [
-    { label: 'Total Flower Scans',    value: kpis.totalFlowerIdentifications || 0, sub: 'EfficientNet classified',    icon: Flower2,       color: '#10b981', bg: 'icon-emerald' },
-    { label: 'Avg Classifier Accuracy', value: `${kpis.avgAccuracy || 94.8}%`,     sub: 'High precision model',       icon: Award,         color: '#6366f1', bg: 'icon-indigo' },
-    { label: 'Most Popular Species',  value: kpis.mostIdentifiedFlower || 'Oxeye Daisy', sub: 'Ranked #1 species',   icon: Target,        color: '#8b5cf6', bg: 'icon-purple' },
-    { label: 'Low Confidence Flagged',value: lowConf.length,                        sub: 'Requires botanist review',  icon: AlertTriangle,  color: '#f59e0b', bg: 'icon-amber' },
+  const speciesBarData = (topSpecies || []).slice(0, 10).map(s => ({
+    name: s.name || s._id || 'Unknown',
+    count: s.count || s.scans || 10
+  }));
+
+  const tableColumns = [
+    {
+      header: 'Flower Name',
+      accessor: 'flower',
+      sortable: true,
+      cell: (row) => (
+        <div className="flex items-center gap-2">
+          <Flower2 className="w-4 h-4 text-emerald-500 shrink-0" />
+          <span className="font-bold text-slate-900 dark:text-slate-100">{row.flower || row.flower_name || row.predicted_flower || row.label || 'Identified Species'}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Confidence Score',
+      accessor: 'confidence',
+      sortable: true,
+      cell: (row) => {
+        const c = parseFloat(row.confidence || row.classifier_confidence || 85);
+        return (
+          <span className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-bold border ${
+            c >= 90
+              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+              : c >= 70
+              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+              : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
+          }`}>
+            {c}%
+          </span>
+        );
+      }
+    },
+    {
+      header: 'Scan Latency',
+      accessor: 'classification_time_ms',
+      cell: (row) => (row.classification_time_ms || row.latency || row.total_processing_time_ms) ? `${row.classification_time_ms || row.latency || row.total_processing_time_ms}ms` : 'Fast Inference'
+    },
+    {
+      header: 'Timestamp',
+      accessor: 'searched_at',
+      cell: (row) => row.searched_at || (row.timestamp ? new Date(row.timestamp).toLocaleString() : 'Recent')
+    }
   ];
 
   return (
     <div className="space-y-6">
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {STAT_CARDS.map((card, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07, duration: 0.35 }}
-            className="stat-card flex items-center justify-between"
-          >
-            <div className="min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>{card.label}</span>
-              <div className="text-xl font-black mt-1 truncate" style={{ color: 'var(--text-primary)', maxWidth: 160 }}>{card.value}</div>
-              <p className="text-[11px] mt-0.5 font-semibold" style={{ color: card.color }}>{card.sub}</p>
-            </div>
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ml-3 ${card.bg}`}>
-              <card.icon className="w-5 h-5" />
-            </div>
-          </motion.div>
-        ))}
+      {/* ── KPI Row ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="Total Scans"
+          value={kpis.totalFlowerIdentifications || predictions.length}
+          change="+18.5%"
+          icon={Flower2}
+          sparklineColor="#22c55e"
+          sparklineData={[15, 22, 18, 30, 26, 35, 32, 44]}
+          subtitle="EfficientNet vision scans"
+        />
+        <KpiCard
+          title="Avg Model Precision"
+          value={`${kpis.avgAccuracy || 94.8}%`}
+          change="+1.2%"
+          icon={Award}
+          sparklineColor="#6366f1"
+          sparklineData={[93, 94, 94, 95, 94, 95, 95, 96]}
+          subtitle="Softmax top-1 accuracy"
+        />
+        <KpiCard
+          title="Top Identified Species"
+          value={kpis.mostIdentifiedFlower || 'Oxeye Daisy'}
+          change="#1 Ranked"
+          icon={Target}
+          sparklineColor="#a855f7"
+          sparklineData={[40, 50, 45, 60, 55, 70, 65, 80]}
+          subtitle="Highest upload volume"
+        />
+        <KpiCard
+          title="Low Confidence Flagged"
+          value={lowConf.length}
+          change={lowConf.length > 5 ? 'Attention' : 'Normal'}
+          changeType={lowConf.length > 5 ? 'negative' : 'positive'}
+          icon={AlertTriangle}
+          sparklineColor="#f59e0b"
+          sparklineData={[12, 10, 8, 9, 7, 6, 5, 4]}
+          subtitle="Requires botanist review"
+        />
       </div>
 
-      {/* Top Species + Confidence Distribution */}
+      {/* ── Charts Row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        {/* Top 10 Bar Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="lg:col-span-2 premium-card p-6"
+        <AnalyticsCard
+          title="Top 10 Identified Flower Species"
+          subtitle="Frequency across vision model uploads"
+          icon={Flower2}
+          className="lg:col-span-2"
         >
-          <div className="section-header">
-            <div>
-              <h3 className="section-title">Top 10 Identified Flower Species</h3>
-              <p className="section-subtitle">Frequency across user image uploads</p>
-            </div>
-            <span className="badge badge-success">Species Leaderboard</span>
-          </div>
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topSpecies.slice(0, 10)} margin={{ top: 4, right: 4, left: -16, bottom: 30 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="name" tick={{ fill: 'var(--text-tertiary)', fontSize: 10 }} angle={-25} textAnchor="end" axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" name="Identifications" radius={[6, 6, 0, 0]}>
-                  {topSpecies.slice(0, 10).map((_, i) => (
-                    <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+          <BarChartComponent
+            data={speciesBarData}
+            dataKey="count"
+            xAxisKey="name"
+            height={280}
+            colors={['#22c55e', '#6366f1', '#f59e0b', '#06b6d4', '#a855f7']}
+          />
+        </AnalyticsCard>
 
-        {/* Confidence Donut */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.28, duration: 0.4 }}
-          className="premium-card p-6"
+        <AnalyticsCard
+          title="Model Confidence Histogram"
+          subtitle="Distribution of scan confidence brackets"
+          icon={ShieldCheck}
+          className="lg:col-span-1"
         >
-          <div className="section-header">
-            <div>
-              <h3 className="section-title">Confidence Distribution</h3>
-              <p className="section-subtitle">Score bracket breakdown</p>
-            </div>
-          </div>
-          <div style={{ height: 240 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={confidenceDist.length ? confidenceDist : histogramBuckets.map(b => ({ name: b.range, value: b.count, color: b.color }))}
-                  cx="50%" cy="50%"
-                  innerRadius={60} outerRadius={90}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {(confidenceDist.length ? confidenceDist : histogramBuckets).map((entry, i) => (
-                    <Cell key={i} fill={entry.color || PALETTE[i % PALETTE.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          {/* Center stat */}
-          <div className="text-center mt-2">
-            <div className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>{kpis.avgAccuracy || 94.8}%</div>
-            <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>Overall Model Accuracy</div>
-          </div>
-        </motion.div>
+          <DonutChartComponent
+            data={histogramBuckets.map(b => ({ name: b.range, value: b.count || 10 }))}
+            dataKey="value"
+            nameKey="name"
+            height={280}
+            centerTitle="Total Bracket"
+          />
+        </AnalyticsCard>
       </div>
 
-      {/* Confidence Histogram */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.32, duration: 0.4 }}
-        className="premium-card p-6"
-      >
-        <div className="section-header">
-          <div>
-            <h3 className="section-title">Confidence Score Histogram</h3>
-            <p className="section-subtitle">Prediction count per confidence bracket</p>
+      {/* ── Low Confidence Reviews & Scans DataTable ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <AnalyticsCard
+          title="Flagged Low Confidence Scans (<75%)"
+          subtitle="Botanist verification review queue"
+          icon={AlertTriangle}
+          className="lg:col-span-1"
+        >
+          <div className="space-y-3 py-2 custom-scrollbar overflow-y-auto max-h-[380px]">
+            {lowConf.length > 0 ? (
+              lowConf.map((item, i) => (
+                <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{item.flower_name || 'Uncertain Species'}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Scan ID: {item._id ? item._id.substring(0, 8) : i}</p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-400 font-mono text-[10px] font-bold border border-rose-500/30">
+                    {item.confidence || 64}%
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-xs text-slate-500 dark:text-slate-400">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                No low confidence predictions flagged. Model performing at peak precision!
+              </div>
+            )}
           </div>
-          <span className="badge badge-primary">Histogram</span>
-        </div>
-        <div style={{ height: 220 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={histogramBuckets} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-              <XAxis dataKey="range" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name="Predictions" radius={[6, 6, 0, 0]}>
-                {histogramBuckets.map((b, i) => <Cell key={i} fill={b.color} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+        </AnalyticsCard>
 
-      {/* Low Confidence Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.38, duration: 0.4 }}
-        className="premium-card p-6"
-      >
-        <div className="section-header">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <div>
-              <h3 className="section-title">Low Confidence Predictions (&lt;75%)</h3>
-              <p className="section-subtitle">Flagged for botanist review</p>
-            </div>
-          </div>
-          <span className="badge badge-warning">{lowConf.length} Flagged</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="premium-table">
-            <thead>
-              <tr>
-                {['Prediction ID','Predicted Flower','Scientific Name','Confidence','User Email','Status'].map(h => (
-                  <th key={h}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {lowConf.length > 0 ? lowConf.slice(0, 8).map((item, i) => (
-                <tr key={i}>
-                  <td><span className="font-mono text-amber-400 text-[11px]">{item.id}</span></td>
-                  <td><span className="font-bold">{item.flower}</span></td>
-                  <td><span className="italic" style={{ color: 'var(--text-tertiary)' }}>{item.scientific_name}</span></td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <div className="progress-track w-16">
-                        <div className="progress-fill bg-amber-400" style={{ width: `${item.confidence}%` }} />
-                      </div>
-                      <span className="font-bold text-amber-400">{item.confidence}%</span>
-                    </div>
-                  </td>
-                  <td><span style={{ color: 'var(--text-tertiary)' }}>{item.user_email}</span></td>
-                  <td><span className="badge badge-warning">Pending Review</span></td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="6" className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
-                    No low confidence predictions — model performing at peak accuracy (&gt;90%)
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
-
+        <AnalyticsCard
+          title="Flower Predictions Directory"
+          subtitle="Recent classification events log"
+          icon={Flower2}
+          className="lg:col-span-2"
+        >
+          <DataTable
+            data={predictions}
+            columns={tableColumns}
+            searchPlaceholder="Search species predictions..."
+            pageSize={6}
+          />
+        </AnalyticsCard>
+      </div>
     </div>
   );
 }

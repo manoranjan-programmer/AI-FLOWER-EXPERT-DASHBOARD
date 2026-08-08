@@ -1,0 +1,23 @@
+{
+  "name": "flower-ai-command-system",
+  "version": "1.0.0",
+  "description": "Professional Standalone AI Command System CLI for Flower AI Expert Dashboard",
+  "main": "index.js",
+  "bin": {
+    "flower-ai": "./bin/flower-ai.js"
+  },
+  "scripts": {
+    "start": "node bin/flower-ai.js",
+    "test": "node bin/flower-ai.js help"
+  },
+  "keywords": [
+    "flower-ai",
+    "cli",
+    "command-system",
+    "ai-parser",
+    "automation",
+    "dashboard"
+  ],
+  "author": "Flower AI Team",
+  "license": "MIT"
+}

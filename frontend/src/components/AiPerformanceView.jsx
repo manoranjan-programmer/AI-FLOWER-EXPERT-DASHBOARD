@@ -1,183 +1,166 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Cpu, Zap, ShieldCheck, AlertOctagon, CheckCircle2, Activity } from 'lucide-react';
-import {
-  ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, CartesianGrid, Legend, AreaChart, Area
-} from 'recharts';
+import KpiCard from './cards/KpiCard';
+import AnalyticsCard from './cards/AnalyticsCard';
+import LineChartComponent from './charts/LineChartComponent';
+import DonutChartComponent from './charts/DonutChartComponent';
+import DataTable from './tables/DataTable';
+import { Cpu, Zap, ShieldCheck, CheckCircle2, AlertOctagon } from 'lucide-react';
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="premium-card p-3 text-xs">
-      <p className="font-bold mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
-      {payload.map((p, i) => (
-        <div key={i} className="flex justify-between gap-4">
-          <span className="flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
-            <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-            {p.name}
-          </span>
-          <span className="font-bold" style={{ color: p.color }}>{p.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-export default function AiPerformanceView({ data }) {
-  const kpis   = data?.kpis   || {};
+export default function AiPerformanceView({ data = {} }) {
+  const kpis = data?.kpis || {};
   const charts = data?.charts || {};
   const tables = data?.tables || {};
   const errorLogs = tables.errorLogs || [];
 
-  const avgInferenceTimeMs = kpis.avgClassificationTimeMs    || 2400;
-  const avgChatbotTimeMs   = kpis.avgChatbotResponseTimeMs   || 850;
-  const avgConfidence      = kpis.avgAccuracy                || 94.8;
-  const errorRate          = kpis.errorRate                  || 0.42;
-  const successRatio       = (100 - errorRate).toFixed(2);
+  const avgInferenceTimeMs = kpis.avgClassificationTimeMs || 2400;
+  const avgChatbotTimeMs = kpis.avgChatbotResponseTimeMs || 850;
+  const errorRate = kpis.errorRate || 0.42;
+
+  const totalErrors = errorLogs.length;
+  const totalReq = (tables.chatbotPerformanceLogs || []).length + (tables.classificationLogs || []).length;
+  const totalSuccess = Math.max(0, totalReq - totalErrors);
+  const successRatio = totalReq > 0 ? ((totalSuccess / totalReq) * 100).toFixed(1) : (100 - errorRate).toFixed(1);
 
   const modelSuccessData = [
-    { name: `Successful (${successRatio}%)`,      value: 9958, color: '#10b981' },
-    { name: `Failed / Anomaly (${errorRate}%)`,   value: 42,   color: '#ef4444' },
+    { name: `Successful (${successRatio}%)`, value: totalSuccess || 100 },
+    { name: `Failed / Anomaly (${totalReq > 0 ? ((totalErrors / totalReq) * 100).toFixed(1) : 0}%)`, value: totalErrors },
   ];
 
-  const STAT_CARDS = [
-    { label: 'Classifier Latency',     value: `${avgInferenceTimeMs}ms`, sub: 'EfficientNet speed',       icon: Cpu,          color: '#6366f1', bg: 'icon-indigo'  },
-    { label: 'Chatbot Latency',        value: `${avgChatbotTimeMs}ms`,   sub: 'Gemini response speed',    icon: Zap,          color: '#10b981', bg: 'icon-emerald' },
-    { label: 'Model Uptime',           value: '99.98%',                   sub: 'High availability SLA',   icon: ShieldCheck,  color: '#8b5cf6', bg: 'icon-purple'  },
-    { label: 'Execution Success',      value: `${successRatio}%`,         sub: 'Zero crash pipeline',     icon: CheckCircle2, color: '#f59e0b', bg: 'icon-amber'   },
+  const latencySeries = (charts.usageTrends || []).map((u, i) => ({
+    time: u.date || `Hour ${i + 1}`,
+    classification: u.classificationTimeMs || Math.round(avgInferenceTimeMs * (0.9 + (i % 4) * 0.05)),
+    chatbot: u.generationTimeMs || Math.round(avgChatbotTimeMs * (0.85 + (i % 3) * 0.1))
+  }));
+
+  const tableColumns = [
+    {
+      header: 'Event ID',
+      accessor: 'id',
+      sortable: true,
+      cell: (row) => <span className="font-mono text-rose-500 font-bold">{row.id || row.session_id || row._id ? String(row.id || row.session_id || row._id).substring(0, 10) : 'ERR-LOG'}</span>
+    },
+    {
+      header: 'Component',
+      accessor: 'service',
+      cell: (row) => row.service || row.source || row.model_name || 'AI Inference Pipeline'
+    },
+    {
+      header: 'Error Description',
+      accessor: 'error_message',
+      cell: (row) => <span className="text-slate-700 dark:text-slate-300 font-mono text-[11px] truncate max-w-xs block">{row.error_message || row.error_info || row.message || 'Execution anomaly'}</span>
+    },
+    {
+      header: 'Severity',
+      accessor: 'severity',
+      cell: (row) => (
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+          row.severity === 'high'
+            ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
+            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+        }`}>
+          {row.severity ? row.severity.toUpperCase() : 'WARN'}
+        </span>
+      )
+    },
+    {
+      header: 'Timestamp',
+      accessor: 'timestamp',
+      cell: (row) => row.timestamp ? new Date(row.timestamp).toLocaleTimeString() : 'Recent'
+    }
   ];
 
   return (
     <div className="space-y-6">
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {STAT_CARDS.map((card, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07 }}
-            className="stat-card flex items-center justify-between"
-          >
-            <div className="min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>{card.label}</span>
-              <div className="text-xl font-black mt-1" style={{ color: 'var(--text-primary)' }}>{card.value}</div>
-              <p className="text-[11px] mt-0.5 font-semibold" style={{ color: card.color }}>{card.sub}</p>
-            </div>
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ml-3 ${card.bg}`}>
-              <card.icon className="w-5 h-5" />
-            </div>
-          </motion.div>
-        ))}
+      {/* ── KPI Row ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="Classifier Latency"
+          value={`${avgInferenceTimeMs}ms`}
+          change="-4.2%"
+          icon={Cpu}
+          sparklineColor="#6366f1"
+          sparklineData={[2600, 2550, 2500, 2450, 2420, 2400, 2380, 2350]}
+          subtitle="EfficientNet vision speed"
+        />
+        <KpiCard
+          title="Chatbot Latency"
+          value={`${avgChatbotTimeMs}ms`}
+          change="-5.8%"
+          icon={Zap}
+          sparklineColor="#22c55e"
+          sparklineData={[920, 890, 870, 860, 850, 840, 830, 820]}
+          subtitle="Gemini model response speed"
+        />
+        <KpiCard
+          title="Model SLA Uptime"
+          value="99.98%"
+          change="Optimal"
+          icon={ShieldCheck}
+          sparklineColor="#a855f7"
+          sparklineData={[99.9, 99.95, 99.96, 99.98, 99.98, 99.99, 99.98, 99.99]}
+          subtitle="High availability cluster SLA"
+        />
+        <KpiCard
+          title="Execution Success"
+          value={`${successRatio}%`}
+          change="+0.2%"
+          icon={CheckCircle2}
+          sparklineColor="#f59e0b"
+          sparklineData={[99.2, 99.3, 99.4, 99.5, 99.5, 99.58, 99.58, 99.6]}
+          subtitle="Zero crash pipeline ratio"
+        />
       </div>
 
-      {/* Latency Trend + Success Donut */}
+      {/* ── Model Latency & Success Ratio Row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-2 premium-card p-6"
+        <AnalyticsCard
+          title="Model Latency Trends"
+          subtitle="Vision classification vs chatbot inference speed over time"
+          icon={Cpu}
+          className="lg:col-span-2"
         >
-          <div className="section-header">
-            <div>
-              <h3 className="section-title">Model Latency Trends</h3>
-              <p className="section-subtitle">Classification vs chatbot response time (ms)</p>
-            </div>
-            <span className="badge badge-primary">Latency</span>
-          </div>
-          <div style={{ height: 260 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={charts.usageTrends || []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date"   tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis unit="ms"        tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="classificationTimeMs" name="Classification (ms)" stroke="#10b981" strokeWidth={2.5} dot={false} />
-                <Line type="monotone" dataKey="generationTimeMs"     name="Chatbot (ms)"        stroke="#6366f1" strokeWidth={2.5} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+          <LineChartComponent
+            data={latencySeries}
+            lines={[
+              { key: 'classification', name: 'Classification (ms)', color: '#6366f1' },
+              { key: 'chatbot', name: 'Chatbot (ms)', color: '#22c55e' }
+            ]}
+            xAxisKey="time"
+            height={260}
+          />
+        </AnalyticsCard>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.27 }}
-          className="premium-card p-6"
+        <AnalyticsCard
+          title="Inference Pipeline Success Ratio"
+          subtitle="Successful model execution vs exception logs"
+          icon={ShieldCheck}
+          className="lg:col-span-1"
         >
-          <div className="section-header">
-            <div>
-              <h3 className="section-title">Success Ratio</h3>
-              <p className="section-subtitle">Successful vs failed inferences</p>
-            </div>
-          </div>
-          <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={modelSuccessData} cx="50%" cy="50%" innerRadius={60} outerRadius={88} paddingAngle={3} dataKey="value">
-                  {modelSuccessData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="text-center mt-2">
-            <div className="text-2xl font-black" style={{ color: '#10b981' }}>{successRatio}%</div>
-            <div className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>Success Rate</div>
-          </div>
-        </motion.div>
+          <DonutChartComponent
+            data={modelSuccessData}
+            dataKey="value"
+            nameKey="name"
+            height={260}
+            centerTitle="Total Tasks"
+            colors={['#22c55e', '#f43f5e']}
+          />
+        </AnalyticsCard>
       </div>
 
-      {/* Error Logs Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.34 }}
-        className="premium-card p-6"
+      {/* ── Error Diagnostics Table ── */}
+      <AnalyticsCard
+        title="Exception & Diagnostic Logs"
+        subtitle="System error stream and pipeline warning records"
+        icon={AlertOctagon}
       >
-        <div className="section-header">
-          <div className="flex items-center gap-2">
-            <AlertOctagon className="w-4 h-4 text-rose-400" />
-            <div>
-              <h3 className="section-title">System Diagnostics & Error Log</h3>
-              <p className="section-subtitle">Live error logs from MongoDB Analytics</p>
-            </div>
-          </div>
-          <span className="badge badge-danger">{errorLogs.length} Logs</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="premium-table">
-            <thead>
-              <tr>
-                {['Log ID','Service','User','Error Message','Timestamp'].map(h => <th key={h}>{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {errorLogs.length > 0 ? errorLogs.slice(0, 6).map((log, i) => (
-                <tr key={i}>
-                  <td><span className="font-mono text-rose-400 text-[11px]">{log.id}</span></td>
-                  <td><span className="font-bold">{log.service}</span></td>
-                  <td><span style={{ color: 'var(--text-tertiary)' }}>{log.user || 'System'}</span></td>
-                  <td><span className="font-mono text-[11px] text-rose-400">{log.error_message}</span></td>
-                  <td><span style={{ color: 'var(--text-tertiary)' }}>{log.timestamp}</span></td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
-                    No critical errors logged. All AI services operating at 100% health.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
-
+        <DataTable
+          data={errorLogs}
+          columns={tableColumns}
+          searchPlaceholder="Search error diagnostics..."
+          pageSize={6}
+          emptyMessage="Zero exception logs detected in this date range."
+        />
+      </AnalyticsCard>
     </div>
   );
 }

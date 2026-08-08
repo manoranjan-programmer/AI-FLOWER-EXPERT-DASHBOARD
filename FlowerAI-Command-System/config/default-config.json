@@ -1,0 +1,16 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "apiBaseUrl": "http://localhost:5001/api",
+  "environment": "development",
+  "routes": {
+    "dashboard": "/dashboard",
+    "analytics": "/analytics",
+    "chatbot": "/chatbot",
+    "users": "/users",
+    "flowers": "/flowers",
+    "settings": "/settings"
+  },
+  "exportDirectory": "./exports",
+  "autoOpenBrowser": true,
+  "maxHistory": 100
+}

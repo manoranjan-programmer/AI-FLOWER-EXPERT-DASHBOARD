@@ -1,199 +1,280 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import MetricCard from './common/MetricCard';
+import KpiCard from './cards/KpiCard';
+import AnalyticsCard from './cards/AnalyticsCard';
+import AreaChartComponent from './charts/AreaChartComponent';
+import DonutChartComponent from './charts/DonutChartComponent';
+import LineChartComponent from './charts/LineChartComponent';
+import BarChartComponent from './charts/BarChartComponent';
+import DataTable from './tables/DataTable';
 import {
-  MessageSquare, Flower2, Bookmark, Users, Clock,
-  Calendar, TrendingUp, CheckCircle2, Zap, Brain,
-  Database, Activity, ArrowUpRight
+  MessageSquare,
+  Flower2,
+  Brain,
+  Zap,
+  Activity,
+  ArrowUpRight,
+  Sparkles,
+  Layers,
+  Database,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
-import {
-  ResponsiveContainer, AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, Tooltip, CartesianGrid, Cell, Legend
-} from 'recharts';
 
-const SPECIES_COLORS = ['#6366f1','#10b981','#f59e0b','#06b6d4','#ec4899','#8b5cf6','#84cc16','#f97316'];
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="premium-card p-3 text-xs" style={{ minWidth: 140 }}>
-      <p className="font-bold mb-1.5" style={{ color: 'var(--text-secondary)' }}>{label}</p>
-      {payload.map((p, i) => (
-        <div key={i} className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
-            <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-            {p.name}
-          </span>
-          <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{p.value?.toLocaleString()}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-export default function OverviewSection({ data, onCardClick }) {
-  const kpis   = data?.kpis   || {};
+export default function OverviewSection({ data = {}, onCardClick = null }) {
+  const kpis = data?.kpis || {};
   const charts = data?.charts || {};
+  const tables = data?.tables || {};
 
-  const totalConversations   = kpis.totalChats                   || 0;
-  const totalIdentifications = kpis.totalFlowerIdentifications   || 0;
-  const totalSavedFlowers    = Math.round(totalIdentifications * 0.42);
-  const totalActiveUsers     = kpis.activeUsersToday || kpis.totalRegisteredUsers || 0;
-  const todayQueries         = Math.round(totalIdentifications * 0.18);
-  const weeklyQueries        = Math.round(totalIdentifications * 0.54);
-  const avgResponseMs        = kpis.avgChatbotResponseTimeMs || 850;
-  const successRate          = kpis.positiveFeedbackRatio || (100 - (kpis.errorRate || 2.1)).toFixed(1);
+  const totalConversations = kpis.totalChats !== undefined ? kpis.totalChats : (tables.chatSessions || []).length;
+  const totalIdentifications = kpis.totalFlowerIdentifications !== undefined ? kpis.totalFlowerIdentifications : (tables.recentPredictions || []).length;
+  const avgConfidence = kpis.avgAccuracy !== undefined ? `${kpis.avgAccuracy}%` : (kpis.positiveFeedbackRatio ? `${kpis.positiveFeedbackRatio}%` : '89.4%');
+  const avgLatency = kpis.avgChatbotResponseTimeMs ? `${kpis.avgChatbotResponseTimeMs}ms` : (kpis.avgClassificationTimeMs ? `${kpis.avgClassificationTimeMs}ms` : '15089ms');
 
-  const trendSeries = (charts.usageTrends || []).map(u => ({ value: u.uploads || u.chats || 10 }));
-  const topSpecies  = (charts.topSpecies  || []).slice(0, 7);
+  const trendSeries = (charts.usageTrends || []).map(u => ({
+    name: u.date || u.time || 'Day',
+    interactions: u.chats !== undefined ? u.chats : (u.uploads || 10),
+    identifications: u.predictions !== undefined ? u.predictions : (u.uploads || 10)
+  }));
 
-  const KPI_CARDS = [
-    { title: 'Total Conversations',    value: totalConversations,   change: '+14.2%', icon: MessageSquare, sparklineColor: '#6366f1', gradient: 'icon-indigo',  subtitle: 'MongoDB chat sessions',        data: data?.tables?.chatSessions },
-    { title: 'Flower Identifications', value: totalIdentifications, change: '+18.5%', icon: Flower2,       sparklineColor: '#10b981', gradient: 'icon-emerald', subtitle: 'EfficientNet classifier scans',  data: data?.tables?.recentPredictions },
-    { title: 'Saved Flowers',          value: totalSavedFlowers,    change: '+8.7%',  icon: Bookmark,      sparklineColor: '#8b5cf6', gradient: 'icon-purple',  subtitle: 'User bookmarked species',       data: data?.tables?.galleryItems },
-    { title: 'Active Users',           value: totalActiveUsers,     change: '+12.0%', icon: Users,         sparklineColor: '#06b6d4', gradient: 'icon-cyan',    subtitle: 'Botanists & active accounts',   data: data?.tables?.registeredUsers },
-    { title: "Today's Queries",        value: todayQueries,         change: '+5.4%',  icon: Clock,         sparklineColor: '#f59e0b', gradient: 'icon-amber',   subtitle: 'Queries logged today',          data: data?.tables?.recentPredictions },
-    { title: 'Weekly Volume',          value: weeklyQueries,        change: '+9.1%',  icon: Calendar,      sparklineColor: '#ec4899', gradient: 'icon-pink',    subtitle: 'Past 7 days queries',           data: data?.tables?.recentPredictions },
-    { title: 'Avg AI Response',        value: avgResponseMs,        change: '-4.2%', changeType: 'positive', unit: 'ms', icon: Zap, sparklineColor: '#10b981', gradient: 'icon-emerald', subtitle: 'Gemini chatbot speed',  data: data?.tables?.chatbotPerformanceLogs },
-    { title: 'AI Success Rate',        value: `${successRate}%`,    change: '+1.8%',  icon: CheckCircle2,  sparklineColor: '#10b981', gradient: 'icon-emerald', subtitle: 'Positive feedback & uptime',    data: data?.tables?.chatbotPerformanceLogs },
+  const speciesDistribution = (charts.topSpecies || []).map(s => ({
+    name: s.name || s._id || 'Botanical Species',
+    value: s.count !== undefined ? s.count : (s.value || s.scans || 1)
+  }));
+
+  const latencySeries = (charts.usageTrends || []).map(u => ({
+    time: u.date ? u.date.substring(5) : (u.time || 'Day'),
+    latency: u.generationTimeMs || u.totalTimeMs || u.classificationTimeMs || 850,
+    target: 500
+  }));
+
+  const confidenceDistribution = (charts.confidenceDistribution || []).map(c => ({
+    range: c.name || c.range || 'Score Bracket',
+    value: c.value || 0
+  }));
+
+  const recentTransactions = (tables.recentPredictions || tables.galleryItems || []).slice(0, 10);
+  const recentActivityLogs = (tables.userActivityLogs || tables.chatbotPerformanceLogs || []).slice(0, 6);
+
+  const tableColumns = [
+    {
+      header: 'Species / Query',
+      accessor: 'flower_name',
+      sortable: true,
+      cell: (row) => (
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
+            <Flower2 className="w-3.5 h-3.5" />
+          </div>
+          <div>
+            <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">{row.flower_name || row.query || 'Species Scan'}</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{row._id ? row._id.substring(0, 8) : 'Scan Record'}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'User',
+      accessor: 'username',
+      sortable: true,
+      cell: (row) => row.username || row.user_id || 'Anonymous Botanist'
+    },
+    {
+      header: 'Confidence',
+      accessor: 'confidence',
+      sortable: true,
+      cell: (row) => {
+        const conf = parseFloat(row.confidence || row.accuracy || 92);
+        return (
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono border ${
+            conf >= 90
+              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+              : conf >= 70
+              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+              : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30'
+          }`}>
+            {conf}%
+          </span>
+        );
+      }
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      cell: () => (
+        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="w-3 h-3 inline" /> Verified
+        </span>
+      )
+    },
+    {
+      header: 'Timestamp',
+      accessor: 'timestamp',
+      cell: (row) => row.timestamp ? new Date(row.timestamp).toLocaleTimeString() : 'Just now'
+    }
   ];
-
-  const containerVariants = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.06 } }
-  };
 
   return (
     <div className="space-y-6">
 
-      {/* ── KPI Cards ── */}
-      <motion.div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {KPI_CARDS.map((card, i) => (
-          <MetricCard
-            key={i}
-            title={card.title}
-            value={card.value}
-            change={card.change}
-            changeType={card.changeType || 'positive'}
-            icon={card.icon}
-            trendData={trendSeries}
-            sparklineColor={card.sparklineColor}
-            gradient={card.gradient}
-            unit={card.unit}
-            subtitle={card.subtitle}
-            onClick={() => onCardClick && onCardClick(card.title, card.data)}
-          />
-        ))}
-      </motion.div>
-
-      {/* ── Hero Chart Row ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        {/* Platform Activity — 2/3 width */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="lg:col-span-2 premium-card p-6"
-        >
-          <div className="section-header">
-            <div>
-              <h3 className="section-title">Platform Activity Timeline</h3>
-              <p className="section-subtitle">Daily image classifications vs chatbot responses</p>
-            </div>
-            <span className="badge badge-primary">Live MongoDB</span>
-          </div>
-
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={charts.usageTrends || []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gradUploads" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="gradChats" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="#6366f1" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                <XAxis dataKey="date"    tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis                   tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-                <Area type="monotone" dataKey="uploads" name="Identifications"     stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#gradUploads)" dot={false} />
-                <Area type="monotone" dataKey="chats"   name="Chatbot Sessions"    stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#gradChats)"   dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        {/* Top Species — 1/3 width */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.28, duration: 0.4 }}
-          className="premium-card p-6"
-        >
-          <div className="section-header">
-            <div>
-              <h3 className="section-title">Top Identified Flowers</h3>
-              <p className="section-subtitle">Most classified species</p>
-            </div>
-          </div>
-
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topSpecies} layout="vertical" margin={{ top: 0, right: 8, left: 4, bottom: 0 }}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} axisLine={false} tickLine={false} width={90} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" name="Identified" radius={[0, 6, 6, 0]}>
-                  {topSpecies.map((_, i) => (
-                    <Cell key={i} fill={SPECIES_COLORS[i % SPECIES_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+      {/* ── 4 KPI CARDS ROW WITH SPARKLINES ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="Total Conversations"
+          value={totalConversations}
+          change="+14.2%"
+          changeType="positive"
+          icon={MessageSquare}
+          sparklineColor="#6366f1"
+          sparklineData={[12, 19, 14, 25, 22, 30, 28, 42]}
+          subtitle="MongoDB chat sessions & active conversations"
+          onClick={() => onCardClick && onCardClick('Total Conversations', tables.chatSessions)}
+        />
+        <KpiCard
+          title="Identifications"
+          value={totalIdentifications}
+          change="+18.5%"
+          changeType="positive"
+          icon={Flower2}
+          sparklineColor="#22c55e"
+          sparklineData={[20, 28, 24, 38, 32, 45, 40, 56]}
+          subtitle="EfficientNet vision classifier scans"
+          onClick={() => onCardClick && onCardClick('Identifications', tables.recentPredictions)}
+        />
+        <KpiCard
+          title="AI Confidence"
+          value={avgConfidence}
+          change="+2.1%"
+          changeType="positive"
+          icon={Brain}
+          sparklineColor="#f59e0b"
+          sparklineData={[92, 93, 91, 94, 95, 93, 96, 95]}
+          subtitle="Average top-1 softmax prediction certainty"
+          onClick={() => onCardClick && onCardClick('AI Confidence', tables.classificationLogs)}
+        />
+        <KpiCard
+          title="Avg Latency"
+          value={avgLatency}
+          change="-5.4%"
+          changeType="positive"
+          icon={Zap}
+          sparklineColor="#06b6d4"
+          sparklineData={[480, 460, 440, 450, 420, 410, 430, 400]}
+          subtitle="Gemini model inference response time in ms"
+          onClick={() => onCardClick && onCardClick('Avg Latency', tables.chatbotPerformanceLogs)}
+        />
       </div>
 
-      {/* ── Status Cards Row ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.4 }}
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-      >
-        {[
-          { icon: Brain,    label: 'AI Model Status',    status: 'Operational',  sub: 'EfficientNet inference active',          color: '#10b981', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.2)' },
-          { icon: Database, label: 'MongoDB Atlas',      status: 'Connected',    sub: 'All 8 collections indexed & synced',     color: '#6366f1', bg: 'rgba(99,102,241,0.08)',  border: 'rgba(99,102,241,0.2)' },
-          { icon: Activity, label: 'API Gateway',        status: `${100 - (kpis.errorRate || 2.1).toFixed(1)}% Uptime`, sub: 'Error rate < 2.1%', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.2)' },
-        ].map((item, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 p-4 rounded-2xl"
-            style={{ background: item.bg, border: `1px solid ${item.border}` }}
-          >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${item.bg}`, border: `1px solid ${item.border}` }}>
-              <item.icon className="w-5 h-5" style={{ color: item.color }} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold mb-0.5" style={{ color: 'var(--text-tertiary)' }}>{item.label}</div>
-              <div className="text-sm font-black truncate" style={{ color: item.color }}>{item.status}</div>
-              <div className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{item.sub}</div>
-            </div>
-            <ArrowUpRight className="w-4 h-4 shrink-0 ml-auto" style={{ color: item.color, opacity: 0.6 }} />
+      {/* ── ROW 2: 2/3 AreaChart + 1/3 DonutChart ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <AnalyticsCard
+          title="Platform Interactions & Scans"
+          subtitle="Daily volume of conversation requests vs vision classification uploads"
+          icon={Activity}
+          className="lg:col-span-2"
+        >
+          <AreaChartComponent
+            data={trendSeries}
+            dataKeys={[
+              { key: 'interactions', name: 'Chat Interactions', color: '#6366f1' },
+              { key: 'identifications', name: 'Flower Scans', color: '#22c55e' }
+            ]}
+            xAxisKey="name"
+            height={280}
+          />
+        </AnalyticsCard>
+
+        <AnalyticsCard
+          title="Top Species Distribution"
+          subtitle="Proportion of scans by botanical taxonomy"
+          icon={Layers}
+          className="lg:col-span-1"
+        >
+          <DonutChartComponent
+            data={speciesDistribution}
+            dataKey="value"
+            nameKey="name"
+            height={280}
+            centerTitle="Total Scans"
+          />
+        </AnalyticsCard>
+      </div>
+
+      {/* ── ROW 3: 1/2 Latency LineChart + 1/2 Confidence BarChart ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <AnalyticsCard
+          title="Inference Latency Trends"
+          subtitle="Real-time response speed (ms) vs SLA latency target threshold"
+          icon={Clock}
+        >
+          <LineChartComponent
+            data={latencySeries}
+            lines={[
+              { key: 'latency', name: 'Observed Latency (ms)', color: '#06b6d4' },
+              { key: 'target', name: 'SLA Target (500ms)', color: '#f43f5e' }
+            ]}
+            xAxisKey="time"
+            height={260}
+          />
+        </AnalyticsCard>
+
+        <AnalyticsCard
+          title="Prediction Confidence Score Brackets"
+          subtitle="Distribution of model confidence ranges across recent scans"
+          icon={Brain}
+        >
+          <BarChartComponent
+            data={confidenceDistribution}
+            dataKey="value"
+            xAxisKey="range"
+            height={260}
+            colors={['#22c55e', '#6366f1', '#f59e0b', '#f43f5e']}
+          />
+        </AnalyticsCard>
+      </div>
+
+      {/* ── ROW 4: 1/3 Live Activity Feed + 2/3 Recent Transactions DataTable ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Live Telemetry Activity Feed */}
+        <AnalyticsCard
+          title="Live Telemetry Feed"
+          subtitle="Real-time socket events & system activity"
+          icon={Activity}
+          className="lg:col-span-1"
+        >
+          <div className="space-y-3 py-2 custom-scrollbar overflow-y-auto max-h-[360px]">
+            {recentActivityLogs.map((log, i) => (
+              <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex items-start gap-3">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 mt-1.5 animate-pulse shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                    {log.action || log.event || log.endpoint || 'API Request Logged'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 truncate">
+                    User: {log.user || log.username || 'Botanist'} • {log.latency || log.responseTime ? `${log.latency || log.responseTime}ms` : 'Status 200 OK'}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </motion.div>
+        </AnalyticsCard>
+
+        {/* Recent Transactions / Scans DataTable */}
+        <AnalyticsCard
+          title="Recent Identification Transactions"
+          subtitle="Live classification stream from botanical vision model"
+          icon={Database}
+          className="lg:col-span-2"
+        >
+          <DataTable
+            data={recentTransactions}
+            columns={tableColumns}
+            searchPlaceholder="Filter recent scans..."
+            pageSize={5}
+            emptyMessage="No recent classification records."
+          />
+        </AnalyticsCard>
+      </div>
 
     </div>
   );

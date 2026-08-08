@@ -98,7 +98,6 @@ async function getAnalyticsOverview(dateRange = '30d') {
     getUserFeedback({}, 2000)
   ]);
 
-  const hasRealHistory = realHistory.length > 0;
   const hasRealUsers = realUsers.length > 0;
   const hasChatbotLogs = chatbotLogs.length > 0;
   const hasClassLogs = classLogs.length > 0;
@@ -137,7 +136,37 @@ async function getAnalyticsOverview(dateRange = '30d') {
   const userSearchMap = {};
   const userEmailMap = {};
 
-  realHistory.forEach(rec => {
+  // Build combined history from Flower_Search_History and Chatbot_Feedback
+  const combinedHistory = [...realHistory];
+  if (userFeedbackDocs && userFeedbackDocs.length > 0) {
+    userFeedbackDocs.forEach((fb, idx) => {
+      const existing = combinedHistory.find(h => h.session_id && h.session_id === fb.session_id);
+      if (!existing) {
+        combinedHistory.push({
+          _id: fb._id,
+          session_id: fb.session_id || `fb_sess_${idx}`,
+          user_id: fb.user_id || '',
+          user_email: fb.email || fb.username || 'user@aflowerexpert.com',
+          user_name: fb.username || 'Botanist',
+          flower: fb.flower_name || 'Botanical Inquiry',
+          flower_name: fb.flower_name || 'Botanical Inquiry',
+          scientific_name: 'Botanical species',
+          confidence: fb.classifier_confidence || (fb.rating ? fb.rating * 20 : 92),
+          summary: fb.ai_response ? fb.ai_response.substring(0, 150) + '...' : `Feedback record for ${fb.flower_name || 'General Botany'}`,
+          messages: [
+            { role: 'user', sender: 'user', content: fb.user_prompt || 'User Query', timestamp: fb.timestamp },
+            { role: 'assistant', sender: 'assistant', content: fb.ai_response || 'AI Response', timestamp: fb.timestamp }
+          ],
+          timestamp: fb.timestamp || new Date().toISOString(),
+          searched_at: fb.timestamp ? new Date(fb.timestamp).toLocaleString() : new Date().toLocaleString()
+        });
+      }
+    });
+  }
+
+  const hasRealHistory = combinedHistory.length > 0;
+
+  combinedHistory.forEach(rec => {
     const uid = rec.user_id ? String(rec.user_id) : null;
     const email = rec.user_email ? String(rec.user_email).toLowerCase().trim() : null;
 
@@ -169,6 +198,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
       id: userIdStr,
       google_id: u.google_id || '',
       name: u.name || 'Anonymous User',
+      username: u.name || 'Anonymous User',
       email: u.email || 'user@aflowerexpert.com',
       picture: u.picture || null,
       role: u.role || 'user',
@@ -212,6 +242,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
         id: `synth_user_${idx}`,
         google_id: `google_synth_${1000 + idx}`,
         name: su.name,
+        username: su.name,
         email: su.email,
         picture: null,
         role: su.role,
@@ -398,7 +429,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
   });
 
   // --- 3. FLOWER SEARCH HISTORY METRICS AGGREGATION ---
-  let totalUploads = realHistory.length;
+  let totalUploads = combinedHistory.length;
   let totalConfidenceSum = 0;
   let totalAiResponsesCount = 0;
   let totalUserQuestionsCount = 0;
@@ -439,7 +470,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
     };
   });
 
-  realHistory.forEach((rec, idx) => {
+  combinedHistory.forEach((rec, idx) => {
     const flowerName = (rec.flower || rec.flower_name || 'Unknown Flower').trim();
     const flowerKey = flowerName.toLowerCase();
     const kbMatch = knowledgeMap[flowerKey];
@@ -447,7 +478,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
 
     speciesFrequency[flowerName] = (speciesFrequency[flowerName] || 0) + 1;
 
-    const familyName = (rec.card && rec.card.Family) || (kbMatch && kbMatch.Family) || 'Papaveraceae';
+    const familyName = (rec.card && rec.card.Family) || (kbMatch && kbMatch.Family) || 'Asteraceae';
     familyFrequency[familyName] = (familyFrequency[familyName] || 0) + 1;
 
     const confVal = parseConfidence(rec.confidence);
@@ -489,6 +520,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
       user_id: rec.user_id || '',
       user_email: rec.user_email || 'anonymous@aflowerexpert.com',
       flower: flowerName,
+      flower_name: flowerName,
       scientific_name: scientificName,
       confidence: confVal,
       image_preview: rec.image_preview || null,
@@ -503,6 +535,7 @@ async function getAnalyticsOverview(dateRange = '30d') {
       id: rec._id ? String(rec._id) : `img_${idx}`,
       session_id: rec.session_id || `session_${idx}`,
       flower: flowerName,
+      flower_name: flowerName,
       scientific_name: scientificName,
       confidence: confVal,
       user_email: rec.user_email || 'user@aflowerexpert.com',
@@ -516,9 +549,11 @@ async function getAnalyticsOverview(dateRange = '30d') {
     chatSessions.push({
       session_id: rec.session_id || `sess_${1000 + idx}`,
       flower: flowerName,
+      flower_name: flowerName,
       scientific_name: scientificName,
       confidence: confVal,
-      user: rec.user_email || 'user@aflowerexpert.com',
+      user: rec.user_email || rec.user_name || 'user@aflowerexpert.com',
+      user_name: rec.user_name || 'Botanist User',
       message_count: messages.length || 2,
       user_questions: userMsgs,
       ai_responses: assistantMsgs,

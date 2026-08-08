@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
 import ToastContainer from './components/common/ToastContainer';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 
@@ -16,8 +17,10 @@ export default function App() {
     <ThemeProvider>
       <NotificationProvider>
         <AuthProvider>
-          <MainApp />
-          <ToastContainer />
+          <ErrorBoundary>
+            <MainApp />
+            <ToastContainer />
+          </ErrorBoundary>
         </AuthProvider>
       </NotificationProvider>
     </ThemeProvider>
